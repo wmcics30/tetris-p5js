@@ -141,15 +141,26 @@ class Tetris {
       // Check if the destination intersects with anything.
       if (this.intersects(undefined, this.activePiece.y + dy)) {
 
-        // Shift Tetromino back out until it no longer intersects.
+        // Shift Destination back out until it no longer intersects.
         while (this.intersects(undefined, this.activePiece.y + dy)) {
           if (dy > 0) {
-            this.activePiece.y -= 1;
+            dy -= 1;
           }
+
+          else if (dy < 0) {
+            dy += 1;
+          }
+
+          else if (dy === 0) {
+            break;
+          }
+
           else {
-            this.activePiece.y += 1;
+            return -1;
           }
         }
+
+        this.activePiece.y += dy;
 
         if (this.shouldPlaceTetromino()) {
           this.placeTetromino();
@@ -159,17 +170,16 @@ class Tetris {
         else if (!this.lockDelay) {
           this.lockDelay = true;
           this.moveResetCounter = 0;
-          
         }
       }
       else {
-        // idk
+        this.activePiece.y += dy;
       }
     }
   }
 
   placeTetromino(x = this.activePiece.x, y = this.activePiece.y, rotation = this.activePiece.rotation, type = this.activePiece.type) {
-    if (!this.intersects(x, y, rotation, type) && this.intersects(x, y + 1, rotation, type)) {
+    if (this.canPlaceTetromino(x, y, rotation, type)) {
       for (let i = 0; i < 5; i++) {
         for (let j = 0; j < 5; j++) {
           if (this.activePiece.image(rotation, type).includes(i * 5 + j)) {
@@ -177,6 +187,9 @@ class Tetris {
           }
         }
       }
+
+      this.clearLines();
+      this.advanceNextQueue();
     }
   }
 
@@ -189,17 +202,27 @@ class Tetris {
   // Matrix Methods
   clearLines() {
     let lines = 0;
+
+    // Iterate through each row, starting at the top
     for (let i = 0; i < this.matrix.length - 1; i++) {
+
+      // If the row is full,
       if (this.matrix[i].indexOf(null) === -1) {
         lines += 1;
+
+        // Iterate through rows, starting at the current row and ending one row below the top.
         for (let i1 = i; i1 > 1; i1--) {
           for (let j = 0; j < this.matrix[i1].length - 1; j++) {
             this.matrix[i1][j] = this.matrix[i1 - 1][j];
-            // This is exactly what i did in python, but it feels like it shouldn't work???
           }
         }
+
+        // Top row = Array of length (length of top row) filled with null.
+        this.matrix[0] = Array(this.matrix[0].length).fill(null);
       }
     }
+
+    // Add Scoring & Total Line Count here
   }
 
   // Queue Methods
@@ -208,7 +231,7 @@ class Tetris {
       this.activePiece = Tetromino(this.queue.shift());
     }
     else {
-      // throw error
+      // throw error or return -1
     }
   }
 
@@ -221,6 +244,10 @@ class Tetris {
   // Conditionals
   shouldPlaceTetromino() {
     return this.droppingHard || this.moveResetCounter >= 15;
+  }
+
+  canPlaceTetromino(x = this.activePiece.x, y = this.activePiece.y, rotation = this.activePiece.rotation, type = this.activePiece.type) {
+    return !this.intersects(x, y, rotation, type) && this.intersects(x, y + 1, rotation, type);
   }
 
   intersects(x = this.activePiece.x, y = this.activePiece.y, rotation = this.activePiece.rotation, type = this.activePiece.type) {
