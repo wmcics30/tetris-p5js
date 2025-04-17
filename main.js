@@ -160,6 +160,7 @@ class Tetris {
           }
         }
 
+        // Move the Active Piece to the Destination
         this.activePiece.y += dy;
 
         if (this.shouldPlaceTetromino()) {
@@ -173,6 +174,7 @@ class Tetris {
         }
       }
       else {
+        // Move the Active Piece to the Destination
         this.activePiece.y += dy;
       }
     }
@@ -268,6 +270,14 @@ class Tetris {
       }
     }
     return intersection;
+  }
+}
+
+class Task {
+  constructor(timer = 1000, onExpiry = () => {
+    return -1;
+  }, ...args ) {
+
   }
 }
 
