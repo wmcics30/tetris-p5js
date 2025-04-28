@@ -12,10 +12,23 @@ const QUEUE_LENGTH = 5;
 let tetrominoFigures;
 let tetrominoOffsetData;
 let levelGravities;
+let controls;
 
 let tasks = [];
-// {timer = Timer(), onExpiry = function, ...args};
-// example: {timer = Timer(3000), onExpiry = movePieceLeft, args = idk}
+
+class Task {
+  // Tasks are similar to pygame's EVENTs. Pass a time, a function to call on expiry, and the arguments for the function.
+  constructor(label = "label", timer = 1000, onExpiry = () => {return -1;}, ...args) {
+    this.timer = new Timer(timer);
+    this.onExpiry = onExpiry;
+    this.args = args;
+    this.label = label;
+
+    if (tasks.some((task) => task.label === this.label)) {
+      throw new Error("Task label already exists.");
+    }
+  }
+}
 
 class Tetromino {
   constructor(type = 0) {
@@ -273,18 +286,11 @@ class Tetris {
   }
 }
 
-class Task {
-  constructor(timer = 1000, onExpiry = () => {
-    return -1;
-  }, ...args ) {
-
-  }
-}
-
 function preload() {
   tetrominoFigures = loadJSON('/data-tables/tetromino-figures.json');
   tetrominoOffsetData = loadJSON('/data-tables/offset-data.json');
   levelGravities = loadJSON('/data-tables/level-gravities.json');
+  controls = loadJSON('/usersettings/controls.json');
 }
 
 function setup() {
@@ -295,10 +301,47 @@ function draw() {
   background(220);
 }
 
+function keyPressed() {
+  if (key === controls.reset) {
+
+  }
+  if (key === controls.rotateRight) {
+
+  }
+  else if (key === controls.rotateLeft) {
+
+  }
+  else if (key === controls.rotate180) {
+
+  }
+
+  if (key === controls.moveRight) {
+
+  }
+  else if (key === controls.moveLeft) {
+
+  }
+
+  if (key === controls.hold) {
+
+  }
+
+  if (key === controls.hardDrop) {
+
+  }
+  else if (key === controls.softDrop) {
+
+  }
+
+  if (key === controls.pause) {
+
+  }
+}
+
 function checkTimers() {
   // Checks each task, sees if its timer is expired. if so, executes the specified function.
   for (let task of tasks) {
-    // In any case it should be onExpiry(..args), right? then the onExpiry function can redirect to whatever object you need. That sounds right.
+    // In any case it should be onExpiry(..args).
     if (task.timer.expired()) {
       task.onExpiry(...task.args);
     }
