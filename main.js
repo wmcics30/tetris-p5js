@@ -17,7 +17,7 @@ let controls;
 let tasks = [];
 
 class Task {
-  // Tasks are similar to pygame's EVENTs. Pass a time, a function to call on expiry, and the arguments for the function.
+  // Tasks are similar to pygame's EVENTs. Pass a timer, a function to call on expiry, and the arguments for the function.
   constructor(label = "label", timer = 1000, onExpiry = () => {return -1;}, ...args) {
     this.timer = new Timer(timer);
     this.onExpiry = onExpiry;
@@ -31,6 +31,7 @@ class Task {
 }
 
 class Tetromino {
+  // a Tetris piece.
   constructor(type = 0) {
     this.type = type,
     this.rotation = 0;
@@ -54,6 +55,8 @@ class Tetromino {
 }
 
 class Tetris {
+  // A game of Tetris.
+
   // Setup
   constructor() {
     // Stats
@@ -283,6 +286,33 @@ class Tetris {
       }
     }
     return intersection;
+  }
+}
+
+class GameDisplay {
+  /* a GameDisplay creates graphics objects in which different parts of the game are rendered,
+  allowing for display scaling in multiplayer modes and displays that are easier to edit,
+  with less reliance on constant values to keep everything where it should be.
+  
+  One of these will be created for each player in multiplayer.
+  */
+
+  constructor() {
+    this.matrixDisplay = createGraphics(/* CONSTANT VALUES GO HERE + Scale with size of matrix? unnecessary but still cool*/);
+    this.queueDisplay = createGraphics(/* CONSTANT VALUES GO HERE + Change with length of queue? */);
+    this.holdDisplay = createGraphics(/* CONSTANT VALUES GO HERE + Don't change ever */);
+  }
+
+  displayMatrix(x, y, w, h) {
+    // Equivalent to the drawing of the matrix in tetris.py's while running loop.
+  }
+
+  displayQueue(x, y, w, h) {
+    // Equivalent to the drawing of the queue in tetris.py's while running loop.
+  }
+
+  displayHold(x, y, w, h) {
+    // Equivalent to the drawing of the hold space in tetris.py's while running loop.
   }
 }
 
