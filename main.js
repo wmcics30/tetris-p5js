@@ -297,10 +297,28 @@ class GameDisplay {
   One of these will be created for each player in multiplayer.
   */
 
-  constructor() {
-    this.matrixDisplay = createGraphics(/* CONSTANT VALUES GO HERE + Scale with size of matrix? unnecessary but still cool*/);
-    this.queueDisplay = createGraphics(/* CONSTANT VALUES GO HERE + Change with length of queue? */);
-    this.holdDisplay = createGraphics(/* CONSTANT VALUES GO HERE + Don't change ever */);
+  constructor(x, y, w, h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+
+    this.baseWidth = 100;
+    this.baseHeight = 100;
+
+    this.holdDisplay = {
+      x: 0 + this.baseWidth / 10,
+      y: 0 + this.baseHeight / 10,
+      w: this.baseWidth / 6,
+      h: this.baseHeight / 12
+    };
+
+    this.zoom = findZoom(baseWidth, baseHeight, w, h);
+
+  }
+
+  fitToDimensions(x, y, w, h) {
+
   }
 
   displayMatrix(x, y, w, h) {
@@ -326,6 +344,16 @@ function preload() {
 function setup() {
   createCanvas(windowWidth, windowHeight);
 }
+
+function findZoom(targetW, targetH, destinationW, destinationH) {
+  if (destinationW < destinationH) {
+    let zoom = destinationW / targetW;
+  }
+  else {
+    let zoom = destinationH / targetH;
+  }
+  return zoom;
+} 
 
 function draw() {
   background(220);
