@@ -146,7 +146,7 @@ class Tetris {
       }
     }
     else {
-      // Throw an error
+      // Throw an error idk
     }
   }
 
@@ -404,8 +404,6 @@ function findZoom(targetW, targetH, destinationW, destinationH) {
 
 function draw() {
   background(220);
-
-  
 }
 
 function keyPressed() {
@@ -413,24 +411,24 @@ function keyPressed() {
 
   }
   if (key === controls.rotateRight) {
-
+    games[0].rotateTetromino(1); // Games[0] is a psuedo-placeholder. Multiplayer's interactions with controls and events are gonna be wonky.
   }
   else if (key === controls.rotateLeft) {
-
+    games[0].rotateTetromino(-1);
   }
   else if (key === controls.rotate180) {
-
+    games[0].rotateTetromino(2);
   }
 
   if (key === controls.moveRight) {
-
+    games[0].moveTetrominoX(1);
   }
   else if (key === controls.moveLeft) {
-
+    games[0].moveTetrominoX(-1);
   }
 
   if (key === controls.hold) {
-
+    games[0].holdTetromino();
   }
 
   if (key === controls.hardDrop) {
