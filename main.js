@@ -16,6 +16,8 @@ let controls;
 
 let tasks = [];
 
+let games = [];
+
 class Task {
   // Tasks are similar to pygame's EVENTs. Pass a timer, a function to call on expiry, and the arguments for the function.
   constructor(label = "label", timer = 1000, onExpiry = () => {return -1;}, ...args) {
@@ -59,6 +61,10 @@ class Tetris {
 
   // Setup
   constructor() {
+
+    // Display
+    this.display = new GameDisplay();
+
     // Stats
     this.score = 0,
     this.level = 0,
@@ -298,39 +304,79 @@ class GameDisplay {
   */
 
   constructor(x, y, w, h) {
+    // Relative to window
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
 
+    // Base dimensions and zoom
     this.baseWidth = 100;
     this.baseHeight = 100;
-
-    this.holdDisplay = {
-      x: 0 + this.baseWidth / 10,
-      y: 0 + this.baseHeight / 10,
-      w: this.baseWidth / 6,
-      h: this.baseHeight / 12
-    };
-
     this.zoom = findZoom(baseWidth, baseHeight, w, h);
 
+    // Sub-displays for matrix, hold, and queue that are scaled to the root display's dimensions in their draw functions
+
+    this.matrixDisplay = {
+      relativeX: this.baseWidth / 10,
+      relativeY: this.baseHeight / 10,
+      relativeWidth: this.baseWidth / 3,
+      relativeHeight: this.baseHeight / 1.5
+    };
+
+    this.holdDisplay = {
+      relativeWidth: this.baseWidth / 6,
+      relativeHeight: this.baseHeight / 12,
+      relativeX: undefined,
+      relativeY: undefined
+    };
+
+    this.holdDisplay.relativeX = this.matrixDisplay.relativeX - this.holdDisplay.relativeWidth /* subtract margin*/;
+    this.holdDisplay.relativeY = this.matrixDisplay.relativeY /* + an offset */;
+
+    this.queueDisplay = {
+      relativeWidth: this.baseWidth / 6,
+      relativeHeight: this.baseHeight / 12,
+      relativeX: undefined,
+      relativeY: undefined
+    };
+
+    this.queueDisplay.relativeX = this.matrixDisplay.relativeX + this.matrixDisplay.relativeWidth /* + margin */;
+    this.queueDisplay.relativeY = this.matrixDisplay.relativeY /* + an offset */;
+
   }
 
-  fitToDimensions(x, y, w, h) {
-
-  }
-
-  displayMatrix(x, y, w, h) {
+  displayMatrix() {
     // Equivalent to the drawing of the matrix in tetris.py's while running loop.
+
+    // Rect is a placeholder for the actual drawing
+    rect(this.x + this.zoom * this.matrixDisplay.relativeX,
+      this.y + this.zoom * this.matrixDisplay.relativeY,
+      this.zoom * this.matrixDisplay.relativeWidth,
+      this.zoom * this.matrixDisplay.relativeHeight
+    );
   }
 
-  displayQueue(x, y, w, h) {
+  displayQueue() {
     // Equivalent to the drawing of the queue in tetris.py's while running loop.
+
+    // Rect is a placeholder for the actual drawing
+    rect(this.x + this.zoom * this.queueDisplay.relativeX,
+      this.y + this.zoom * this.queueDisplay.relativeY,
+      this.zoom * this.queueDisplay.relativeWidth,
+      this.zoom * this.queueDisplay.relativeHeight
+    );
   }
 
-  displayHold(x, y, w, h) {
+  displayHold() {
     // Equivalent to the drawing of the hold space in tetris.py's while running loop.
+
+    // Rect is a placeholder for the actual drawing
+    rect(this.x + this.zoom * this.holdDisplay.relativeX,
+      this.y + this.zoom * this.holdDisplay.relativeY,
+      this.zoom * this.holdDisplay.relativeWidth,
+      this.zoom * this.holdDisplay.relativeHeight
+    );
   }
 }
 
@@ -346,17 +392,20 @@ function setup() {
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
+  let zoom;
   if (destinationW < destinationH) {
-    let zoom = destinationW / targetW;
+    zoom = destinationW / targetW;
   }
   else {
-    let zoom = destinationH / targetH;
+    zoom = destinationH / targetH;
   }
   return zoom;
 } 
 
 function draw() {
   background(220);
+
+  
 }
 
 function keyPressed() {
