@@ -19,7 +19,14 @@ let tasks = [];
 let games = [];
 
 class Task {
-  // Tasks are similar to pygame's EVENTs. Pass a timer, a function to call on expiry, and the arguments for the function.
+  // Tasks are similar to pygame's EVENTs.
+
+  // 'timer' is a Timer that operates in milliseconds.
+  // 'onExpiry' is a function to be executed once the Timer reaches 0.
+  // 'targetObject' is the object for the function to be executed on.
+  // 'args' are the arguments passed into the onExpiry function.
+
+  // the Timer does not start by default.
   constructor(label = "label", timer = 1000, targetObject = globalThis, onExpiry = () => {return -1;}, ...args) {
     this.timer = new Timer(timer);
     this.onExpiry = onExpiry;
@@ -34,7 +41,7 @@ class Task {
 }
 
 class Tetromino {
-  // a Tetris piece.
+  // a singular Tetris piece.
   constructor(type = 0) {
     this.type = type,
     this.rotation = 0;
@@ -51,6 +58,7 @@ class Tetromino {
 
   }
 
+  // Returns the Tetromino's figure as found in tetromino-figures.json
   image(rotation = this.rotation, type = this.type) {
     return tetrominoFigures[type][rotation];
   }
@@ -93,6 +101,8 @@ class Tetris {
   }
 
   createNewMatrix() {
+    // Creates a 2D array of specified proportions in which every value is null.
+
     let newMatrix = [];
     for (let i = 0; i < MATRIX_HEIGHT; i++) {
       newMatrix.push([]);
@@ -103,15 +113,25 @@ class Tetris {
     return newMatrix;
   }
 
-  // Active Piece Methods
+  // Active Piece Methods - Needs more code comments
   rotateTetromino(rotationDistance = 0) {
+    // Rotate the active Tetromino.
+
     if (this.activePiece !== null) {
       let newRotation = (this.activePiece.rotation + rotationDistance) % 4;
       switch (this.activePiece.type) {
+
+      // If active piece is an 'I' Tetromino, apply respective offset data.
       case 0:
+
+        // For each column of the Offset Data table,
         for (let i = 0; i < tetrominoOffsetData[1].table[0].length; i++) {
+
+          // Given a column, subtract the X, Y values found in the New Rotation's row from the X, Y values found in the current rotation's row.
           let offsetX = tetrominoOffsetData[1].table[this.activePiece.rotation][i][0] - tetrominoOffsetData[1].table[newRotation][i][0];
           let offsetY = tetrominoOffsetData[1].table[this.activePiece.rotation][i][1] - tetrominoOffsetData[1].table[newRotation][i][1];
+
+          // If there's no intersection at (the active piece's current coordinates plus the offsets), apply the offsets, rotate the piece, and exit the loop.
           if (!this.intersects(this.activePiece.x + offsetX, this.activePiece.y - offsetY, newRotation, undefined)) {
             this.activePiece.x += offsetX;
             this.activePiece.y -= offsetY;
@@ -119,11 +139,21 @@ class Tetris {
             break;
           }
         }
+
         break;
+
+
+      // If active piece is an 'O' Tetromino, apply respecitve offset data.
       case 3:
+        
+        // For each column of the Offset Data table,
         for (let i = 0; i < tetrominoOffsetData[2].table[0].length; i++) {
+          
+          // Given a column, subtract the X, Y values found in the New Rotation's row from the X, Y values found in the current rotation's row.
           let offsetX = tetrominoOffsetData[2].table[this.activePiece.rotation][i][0] - tetrominoOffsetData[2].table[newRotation][i][0];
           let offsetY = tetrominoOffsetData[2].table[this.activePiece.rotation][i][1] - tetrominoOffsetData[2].table[newRotation][i][1];
+
+          // If there's no intersection at (the active piece's current coordinates plus the offsets), apply the offsets, rotate the piece, and exit the loop.
           if (!this.intersects(this.activePiece.x + offsetX, this.activePiece.y - offsetY, newRotation, undefined)) {
             this.activePiece.x += offsetX;
             this.activePiece.y -= offsetY;
@@ -132,10 +162,18 @@ class Tetris {
           }
         }
         break;
+
+      // If active piece is a J, L, S, T, or Z tetromino, apply respective offset data.
       default:
+
+        // For each column of the Offset Data table,
         for (let i = 0; i < tetrominoOffsetData[0].table[0].length; i++) {
+
+          // Given a column, subtract the X, Y values found in the New Rotation's row from the X, Y values found in the current rotation's row.
           let offsetX = tetrominoOffsetData[0].table[this.activePiece.rotation][i][0] - tetrominoOffsetData[0].table[newRotation][i][0];
           let offsetY = tetrominoOffsetData[0].table[this.activePiece.rotation][i][1] - tetrominoOffsetData[0].table[newRotation][i][1];
+
+          // If there's no intersection at (the active piece's current coordinates plus the offsets), apply the offsets, rotate the piece, and exit the loop.
           if (!this.intersects(this.activePiece.x + offsetX, this.activePiece.y - offsetY, newRotation, undefined)) {
             this.activePiece.x += offsetX;
             this.activePiece.y -= offsetY;
@@ -147,17 +185,20 @@ class Tetris {
       }
     }
     else {
-      // Throw an error idk
+      throw new Error("Active Piece does not exist.");
     }
   }
 
   moveTetrominoX(dx = 0) {
+    // Moves the active piece to the left or to the right.
     if (this.activePiece !== null && !this.intersects(this.activePiece.x + dx, undefined)) {
       this.activePiece.x += dx;
     }
   }
 
   moveTetrominoY(dy = 1) {
+    // Moves the active piece either up (which can currently never happen) or down.
+
     // If this.activePiece exists,
     if (this.activePiece !== null) {
 
@@ -204,21 +245,31 @@ class Tetris {
   }
 
   placeTetromino(x = this.activePiece.x, y = this.activePiece.y, rotation = this.activePiece.rotation, type = this.activePiece.type) {
+    // If the Tetromino is placable,
     if (this.canPlaceTetromino(x, y, rotation, type)) {
+
+      // Iterate through a virtual 5x5 Array
       for (let i = 0; i < 5; i++) {
         for (let j = 0; j < 5; j++) {
+
+          // If the active piece's image includes the current space in the virtual array,
           if (this.activePiece.image(rotation, type).includes(i * 5 + j)) {
+
+            // That space in the matrix is set to the active piece's type.
             this.matrix[y + i][x + j] = this.activePiece.type;
           }
         }
       }
 
+      // Clear lines and advance the queue.
       this.clearLines();
       this.advanceNextQueue();
     }
   }
 
   holdTetromino() {
+    // Swaps the active Tetromino with the one stored in the "hold" space.
+
     if (this.activePiece !== null && !this.holdUsed) {
       [this.activePiece, this.heldPieceType] = [Tetromino(this.heldPieceType), this.activePiece.type];
     }
@@ -226,6 +277,8 @@ class Tetris {
 
   // Matrix Methods
   clearLines() {
+    // Clear rows in the matrix that are entirely full.
+
     let lines = 0;
 
     // Iterate through each row, starting at the top
@@ -247,27 +300,56 @@ class Tetris {
       }
     }
 
-    // Add Scoring & Total Line Count here
+    // Basic Per-Line Scoring
+    switch (lines) {
+    case 1:
+      this.score += 100 * this.level;
+      break;
+    case 2:
+      this.score += 300 * this.level;
+      break;
+    case 3:
+      this.score += 500 * this.level;
+      break;
+    case 4:
+      this.score += 800 * this.level;
+      break;
+    default:
+      // Nothing
+      break;
+    }
+
+    // Adding to linesCleared and increasing level
+    this.linesCleared += lines;
+    this.level = Math.floor(this.linesCleared / 10);
+
   }
 
   // Queue Methods
   advanceNextQueue() {
+    // Advances the queue of upcoming Tetrominoes.
+
     if (this.activePiece === null) {
       this.activePiece = Tetromino(this.queue.shift());
     }
     else {
-      // throw error or return -1
+      throw new Error("Active Piece already exists.");
     }
   }
 
   refillNextQueue() {
+    // Refills the queue of upcoming Tetrominoes when depleted.
+
+    // If the queue is shorter than the displayed queue length, refill it with shuffled values 0-6.
     if (this.queue.length < QUEUE_LENGTH) {
-      this.queue.push(...shuffle([0, 1, 2, 3, 4, 5, 6, 7]));
+      this.queue.push(...shuffle([0, 1, 2, 3, 4, 5, 6]));
     }
   }
 
   // Conditionals
   shouldPlaceTetromino() {
+    // Returns true if, when a piece is moved down, it should be placed automatically. Returns false otherwise.
+    // This does not account for the regular, milliseconds based Piece Lock.
     return this.droppingHard || this.moveResetCounter >= 15;
   }
 
@@ -276,6 +358,7 @@ class Tetris {
   }
 
   intersects(x = this.activePiece.x, y = this.activePiece.y, rotation = this.activePiece.rotation, type = this.activePiece.type) {
+    // Returns true if the piece passed through the parameters intersects with the outer bounds of the matrix or a placed tetromino.
     let intersection = false;
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
@@ -297,11 +380,14 @@ class Tetris {
 }
 
 class GameDisplay {
-  /* a GameDisplay creates graphics objects in which different parts of the game are rendered,
-  allowing for display scaling in multiplayer modes and displays that are easier to edit,
-  with less reliance on constant values to keep everything where it should be.
+  /* The GameDisplay Class describes a rectangular surface in which an instance of Tetris is displayed,
+  With one of these being created for each player in multiplayer.
   
-  One of these will be created for each player in multiplayer.
+  The purpose of this class is to make scaling, moving, and otherwise altering the way an instance is displayed easier.
+  The purpose of the sub-displays (see the constructor function) are to make the same alterations towards individual elements of the display (IE the Next Queue) easier.
+  
+  For example, moving an instance's display ten pixels to the right can be done by adding 10 to the GameDisplay's 'x' value.
+  Similarly, moving the matrix's display within an instance down by 1/10 of the screen can be done by adding (1/10 * GameDisplay.baseHeight) to the matrixDisplay's 'y' value.
   */
 
   constructor(x, y, w, h) {
@@ -390,9 +476,11 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  frameRate(30);
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
+  // Return the highest factor by which the size of the target rectangle can be scaled such that it can still fit within the destination rectangle.
   let zoom;
   if (destinationW < destinationH) {
     zoom = destinationW / targetW;
@@ -402,10 +490,6 @@ function findZoom(targetW, targetH, destinationW, destinationH) {
   }
   return zoom;
 } 
-
-function draw() {
-  background(220);
-}
 
 function keyPressed() {
   if (key === controls.reset) {
@@ -444,17 +528,23 @@ function keyPressed() {
   }
 }
 
-function checkTimers() {
+function runTasks() {
   // Checks each task, sees if its timer is expired. if so, executes the specified function.
   for (let task of tasks) {
-    // In any case it should be onExpiry(..args).
     if (task.timer.expired()) {
       let targetObject = task.targetObject;
       let onExpiry = task.onExpiry;
       let args = task.args;
+
+      // Calls the onExpiry function on targetObject with the appropriate arguments.
       onExpiry.call(targetObject, ...args);
     }
   }
+}
+
+function draw() {
+  background(220);
+
 }
 
 // IJLOSTZ
