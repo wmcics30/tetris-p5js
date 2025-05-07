@@ -20,10 +20,11 @@ let games = [];
 
 class Task {
   // Tasks are similar to pygame's EVENTs. Pass a timer, a function to call on expiry, and the arguments for the function.
-  constructor(label = "label", timer = 1000, onExpiry = () => {return -1;}, ...args) {
+  constructor(label = "label", timer = 1000, targetObject = globalThis, onExpiry = () => {return -1;}, ...args) {
     this.timer = new Timer(timer);
     this.onExpiry = onExpiry;
     this.args = args;
+    this.targetObject = targetObject;
     this.label = label;
 
     if (tasks.some((task) => task.label === this.label)) {
@@ -448,7 +449,10 @@ function checkTimers() {
   for (let task of tasks) {
     // In any case it should be onExpiry(..args).
     if (task.timer.expired()) {
-      task.onExpiry(...task.args);
+      let targetObject = task.targetObject;
+      let onExpiry = task.onExpiry;
+      let args = task.args;
+      onExpiry.call(targetObject, ...args);
     }
   }
 }
