@@ -1,9 +1,11 @@
 // Tetris In Javascript
 // Luke Pawle-Fahy
-// 4/15/2025
+// 5/7/2025
 //
 // Extra for Experts:
-// - I don't think I've done anything Extra yet, but that will be the case when this is finished as my Final Project.
+// Heavy use of Classes, JSON, Additional Libraries,
+// Asynchronous events with p5js Timer library, 
+// various operators and methods [examples include shift(), spread and rest operators, call()]
 
 const MATRIX_WIDTH = 10;
 const MATRIX_HEIGHT = 20;
