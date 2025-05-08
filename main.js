@@ -115,7 +115,7 @@ class Tetris {
     return newMatrix;
   }
 
-  // Active Piece Methods - Needs more code comments
+  // Active Piece Methods
   rotateTetromino(rotationDistance = 0) {
     // Rotate the active Tetromino.
 
@@ -379,6 +379,19 @@ class Tetris {
     }
     return intersection;
   }
+
+  // Game Loop Stuff ????? Needs to be reorganized at some point
+  doGravity() {
+    // you're never gonna believe what this does
+
+    // If current frame % levelGravities[currentLevel][0] === 0, move piece down levelGravities[currentLevel][1] spaces.
+    // If current level exceeds 15, use 15
+    // why are there only 14 levels
+    // uses 60fps
+    // ok so there are 14 levels because with my rounding level 15 is infinitely fast so I just removed it
+  }
+
+  
 }
 
 class GameDisplay {
@@ -478,7 +491,7 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  frameRate(30);
+  frameRate(60);
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
