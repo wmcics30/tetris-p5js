@@ -11,6 +11,10 @@ const MATRIX_WIDTH = 10;
 const MATRIX_HEIGHT = 20;
 const QUEUE_LENGTH = 5;
 
+let autoStartDelay;
+let autoRepeatRate;
+let softDropSpeed;
+
 let tetrominoFigures;
 let tetrominoOffsetData;
 let levelGravities;
@@ -19,7 +23,6 @@ let controls;
 let keyHeldTimes;
 
 let tasks = [];
-
 let games = [];
 
 class Task {
@@ -265,6 +268,8 @@ class Tetris {
         }
       }
 
+      this.droppingHard = false;
+
       // Clear lines and advance the queue.
       this.clearLines();
       this.advanceNextQueue();
@@ -276,6 +281,15 @@ class Tetris {
 
     if (this.activePiece !== null && !this.holdUsed) {
       [this.activePiece, this.heldPieceType] = [Tetromino(this.heldPieceType), this.activePiece.type];
+    }
+  }
+
+  hardDrop() {
+    this.droppingHard = true;
+    this.droppingSoft = false;
+
+    while (this.droppingHard) {
+      this.moveTetrominoY(-1);
     }
   }
 
@@ -393,11 +407,9 @@ class Tetris {
     // ok so there are 14 levels because with my rounding level 15 is infinitely fast so I just removed it
   }
 
-  
-  // Game Loop Stuff IDk 2: Electric Boogaloo (I love forgetting to push my commits!)
   handleDAS() {
     let rightTime = keyHeldTimes.get(str(controls.moveRight));
-    let leftTime = keyHeldTimes.get(str(controls.moveRight));
+    let leftTime = keyHeldTimes.get(str(controls.moveLeft));
 
     // The delay before auto-repetition can start, currently a constant and magic 10 frames
     let leftPassedDelay = leftTime > 10;
@@ -407,28 +419,34 @@ class Tetris {
     let leftMatchesAutoRepeatRate = leftTime % 10 === 0;
     let rightMatchesAutoRepeatRate = rightTime % 10 === 0;
 
-    // If neither key matches, exit the function.
+    // If neither key matches the ARR, exit the function.
     if (!(leftMatchesAutoRepeatRate || rightMatchesAutoRepeatRate)) {
       return -1;
     }
-    if (leftPassedDelay && !rightPassedDelay) {
 
+    if (leftPassedDelay && !rightPassedDelay && leftMatchesAutoRepeatRate) {
+      this.moveTetrominoX(-1);
     }
-    else if (!leftPassedDelay && rightPassedDelay) {
-
+    else if (!leftPassedDelay && rightPassedDelay && rightMatchesAutoRepeatRate) {
+      this.moveTetrominoX(1);
     }
     else if (leftPassedDelay && rightPassedDelay) {
     
       // Moves based on the more recent of the two inputs, with a frame-perfect tie biasing to the right.
       if (rightTime < leftTime) {
-
+        if (rightMatchesAutoRepeatRate) {
+          this.moveTetrominoX(1);
+        }
       }
       else {
-
+        if (leftMatchesAutoRepeatRate) {
+          this.moveTetrominoX(-1);
+        }
       }
     }
     else {
       // No DAS movement occurs
+      return -1;
     }
   }
 }
@@ -535,6 +553,7 @@ function setup() {
   keyHeldTimes = new Map();
   keyHeldTimes.set(str(controls.moveLeft), 0);
   keyHeldTimes.set(str(controls.moveRight), 0);
+  keyHeldTimes.set(str(controls.softDrop), 0);
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
@@ -565,9 +584,11 @@ function keyPressed() {
 
   if (key === controls.moveRight) {
     games[0].moveTetrominoX(1);
+    keyHeldTimes.set(str(controls.moveRight), 1);
   }
-  else if (key === controls.moveLeft) {
+  if (key === controls.moveLeft) {
     games[0].moveTetrominoX(-1);
+    keyHeldTimes.set(str(controls.moveLeft), 1);
   }
 
   if (key === controls.hold) {
@@ -575,10 +596,11 @@ function keyPressed() {
   }
 
   if (key === controls.hardDrop) {
-
+    games[0].hardDrop();
   }
-  else if (key === controls.softDrop) {
 
+  else if (key === controls.softDrop) {
+    keyHeldTimes.set(str(controls.softDrop), 1);
   }
 
   if (key === controls.pause) {
@@ -587,6 +609,33 @@ function keyPressed() {
 }
 
 function keyReleased() {
+  if (key === controls.moveLeft) {
+    keyHeldTimes.set(str(controls.moveLeft), 0);
+  }
+  if (key === controls.moveRight) {
+    keyHeldTimes.set(str(controls.moveRight), 0);
+  }
+  if (key === controls.softDrop) {
+    keyHeldTimes.set(str(controls.softDrop), 0);
+  }
+}
+
+function increaseKeyHeldTimes() {
+  let rightTime = keyHeldTimes.get(str(controls.moveRight));
+  let leftTime = keyHeldTimes.get(str(controls.moveLeft));
+  let softTime = keyHeldTimes.get(str(controls.softDrop));
+
+  if (rightTime !== 0) {
+    keyHeldTimes.set(str(controls.moveRight), rightTime + 1);
+  }
+  if (leftTime !== 0) {
+    keyHeldTimes.set(str(controls.moveLeft), leftTime + 1);
+  }
+  if (softTime !== 0) {
+    keyHeldTimes.set(str(controls.softDrop), softTime + 1);
+  }
+  
+  
 }
 
 function runTasks() {
@@ -605,7 +654,7 @@ function runTasks() {
 
 function draw() {
   background(220);
-
+  increaseKeyHeldTimes();
 }
 
 // IJLOSTZ

@@ -25,9 +25,15 @@ class Task {
 function setup() {
   createCanvas(windowWidth, windowHeight);
   background(100);
-  let testTask = new Task("testTask", 5000, globalThis, alert, "the");
+  let testTask = new Task("testTask", 5000, globalThis, testFunction, "the");
   testTask.timer.start();
   tasks.push(testTask);
+}
+
+function testFunction() {
+  let temp = tasks.find((task) => task.label === "testTask");
+  temp.timer.start();
+  alert("the");
 }
 
 function draw() {
