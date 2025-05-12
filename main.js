@@ -16,6 +16,8 @@ let tetrominoOffsetData;
 let levelGravities;
 let controls;
 
+let keyHeldTimes;
+
 let tasks = [];
 
 let games = [];
@@ -392,6 +394,43 @@ class Tetris {
   }
 
   
+  // Game Loop Stuff IDk 2: Electric Boogaloo (I love forgetting to push my commits!)
+  handleDAS() {
+    let rightTime = keyHeldTimes.get(str(controls.moveRight));
+    let leftTime = keyHeldTimes.get(str(controls.moveRight));
+
+    // The delay before auto-repetition can start, currently a constant and magic 10 frames
+    let leftPassedDelay = leftTime > 10;
+    let rightPassedDelay = rightTime > 10;
+
+    // Checks for if leftTime and rightTime align with the auto-repeat rate, currently a constant and magic 10 frames.
+    let leftMatchesAutoRepeatRate = leftTime % 10 === 0;
+    let rightMatchesAutoRepeatRate = rightTime % 10 === 0;
+
+    // If neither key matches, exit the function.
+    if (!(leftMatchesAutoRepeatRate || rightMatchesAutoRepeatRate)) {
+      return -1;
+    }
+    if (leftPassedDelay && !rightPassedDelay) {
+
+    }
+    else if (!leftPassedDelay && rightPassedDelay) {
+
+    }
+    else if (leftPassedDelay && rightPassedDelay) {
+    
+      // Moves based on the more recent of the two inputs, with a frame-perfect tie biasing to the right.
+      if (rightTime < leftTime) {
+
+      }
+      else {
+
+      }
+    }
+    else {
+      // No DAS movement occurs
+    }
+  }
 }
 
 class GameDisplay {
@@ -492,6 +531,10 @@ function preload() {
 function setup() {
   createCanvas(windowWidth, windowHeight);
   frameRate(60);
+
+  keyHeldTimes = new Map();
+  keyHeldTimes.set(str(controls.moveLeft), 0);
+  keyHeldTimes.set(str(controls.moveRight), 0);
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
@@ -541,6 +584,9 @@ function keyPressed() {
   if (key === controls.pause) {
 
   }
+}
+
+function keyReleased() {
 }
 
 function runTasks() {
