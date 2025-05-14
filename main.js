@@ -10,6 +10,7 @@
 const MATRIX_WIDTH = 10;
 const MATRIX_HEIGHT = 20;
 const QUEUE_LENGTH = 5;
+const VANISH_ZOnE_HEIGHT = 20;
 
 let autoStartDelay;
 let autoRepeatRate;
@@ -24,6 +25,9 @@ let keyHeldTimes;
 
 let tasks = [];
 let games = [];
+
+let sprites = [];
+let skin = 0;
 
 class Task {
   // Tasks are similar to pygame's EVENTs.
@@ -449,6 +453,29 @@ class Tetris {
       return -1;
     }
   }
+
+  // Game-end stuff for displays
+  findGhostPieceY() {
+    if (this.activePiece !== null) {
+      let ghostPieceY = this.activePiece.y;
+      let dropAllowed = true;
+
+      // While the ghost piece can move down, attempt to move it down one row.
+      while (dropAllowed) {
+        if (!this.intersects(undefined, ghostPieceY + 1, undefined, undefined)) {
+          ghostPieceY += 1;
+        }
+        else {
+          dropAllowed = false;
+        }
+      }
+
+      return ghostPieceY;
+    }
+    else {
+      throw new Error("Active piece does not exist.");
+    }
+  }
 }
 
 class GameDisplay {
@@ -462,12 +489,13 @@ class GameDisplay {
   Similarly, moving the matrix's display within an instance down by 1/10 of the screen can be done by adding (1/10 * GameDisplay.baseHeight) to the matrixDisplay's 'y' value.
   */
 
-  constructor(x, y, w, h) {
+  constructor(x, y, w, h, sourceIndex) {
     // Relative to window
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
+    this.game = games[sourceIndex];
 
     // Base dimensions and zoom
     this.baseWidth = 100;
@@ -480,8 +508,11 @@ class GameDisplay {
       relativeX: this.baseWidth / 10,
       relativeY: this.baseHeight / 10,
       relativeWidth: this.baseWidth / 3,
-      relativeHeight: this.baseHeight / 1.5
+      relativeHeight: this.baseHeight / 1.5,
+      relativeCellSize: undefined
     };
+
+    this.matrixDisplay.relativeCellSize = this.matrixDisplay.relativeWidth / MATRIX_WIDTH;
 
     this.holdDisplay = {
       relativeWidth: this.baseWidth / 6,
@@ -506,14 +537,51 @@ class GameDisplay {
   }
 
   displayMatrix() {
-    // Equivalent to the drawing of the matrix in tetris.py's while running loop.
+    // Temporary variable for the absolute size of a cell in the matrix
+    let cellAbsoluteSize = this.zoom * this.matrixDisplay.relativeCellSize;
 
-    // Rect is a placeholder for the actual drawing
-    rect(this.x + this.zoom * this.matrixDisplay.relativeX,
-      this.y + this.zoom * this.matrixDisplay.relativeY,
-      this.zoom * this.matrixDisplay.relativeWidth,
-      this.zoom * this.matrixDisplay.relativeHeight
-    );
+    // Draw Placed Pieces in the matrix
+    for (let i = 0; i < MATRIX_HEIGHT; i++) {
+      for (let j = 0; j < MATRIX_WIDTH; j++) {
+
+        // (i + VANISH_ZONE_HEIGHT if vanish zone is implemented)
+        let cellType = this.game.matrix[i][j];
+
+        // Temporary variables for the cell's absolute position
+        // Will need reworking for vanihsh zone
+        let cellAbsoluteX = this.x + this.zoom * (this.matrixDisplay.relativeX + j * this.matrixDisplay.relativeCellSize);
+        let cellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + i * this.matrixDisplay.relativeCellSize);
+
+        image(sprites[skin][cellType], cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+      }
+    }
+
+    // Find the Y Position of the ghost piece
+    let displayGhostPieceY = this.game.findGhostPieceY();
+
+    // Draw the ghost piece in the matrix (The active piece's position if it were to be hard-dropped)
+    for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 5; j++) {
+        if (this.game.activePiece.image.includes(i * 5 + j)) {
+          let ghostCellAbsoluteX = this.x + this.zoom * (this.matrixDisplay.relativeX + (this.game.activePiece.x + j) * this.matrixDisplay.relativeCellSize);
+          let ghostCellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + (displayGhostPieceY + i) * this.matrixDisplay.relativeCellSize);
+
+          image(sprites[skin][2048 /* Ghost piece type needs to go here */], ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+        }
+      }
+    }
+
+    // Draw the active piece in the matrix
+    for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 5; j++) {
+        if (this.game.activePiece.image.includes(i * 5 + j)) {
+          let activeCellAbsoluteX = this.x + this.zoom * (this.matrixDisplay.relativeX + (this.game.activePiece.x + j) * this.matrixDisplay.relativeCellSize);
+          let activeCellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + (this.game.activePiece.y + i) * this.matrixDisplay.relativeCellSize);
+
+          image(sprites[skin][this.game.activePiece.type], activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+        }
+      }
+    }
   }
 
   displayQueue() {
@@ -536,6 +604,13 @@ class GameDisplay {
       this.zoom * this.holdDisplay.relativeWidth,
       this.zoom * this.holdDisplay.relativeHeight
     );
+  }
+
+  displayAll() {
+    // Runs all other display functions.
+    this.displayMatrix();
+    this.displayHold();
+    this.displayQueue();
   }
 }
 
@@ -655,6 +730,12 @@ function runTasks() {
 function draw() {
   background(220);
   increaseKeyHeldTimes();
+
+  // Display each active game
+  for (let i = 0; i < games.length; i++) {
+    games[i].display.displayAll();
+  }
+
 }
 
 // IJLOSTZ
