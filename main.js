@@ -10,7 +10,7 @@
 const MATRIX_WIDTH = 10;
 const MATRIX_HEIGHT = 20;
 const QUEUE_LENGTH = 5;
-const VANISH_ZOnE_HEIGHT = 20;
+const VANISH_ZONE_HEIGHT = 20;
 
 let autoStartDelay;
 let autoRepeatRate;
@@ -619,6 +619,15 @@ function preload() {
   tetrominoOffsetData = loadJSON('/data-tables/offset-data.json');
   levelGravities = loadJSON('/data-tables/level-gravities.json');
   controls = loadJSON('/usersettings/controls.json');
+
+  // Loading sprites
+  let skinZero = [];
+
+  let skinZeroI = loadImage('/sprites/skin0/i-mino.png');
+  skinZero.push(skinZeroI);
+  /* and so on... */
+
+  sprites.push([skinZero]);
 }
 
 function setup() {
