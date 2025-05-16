@@ -507,7 +507,7 @@ class GameDisplay {
     this.matrixDisplay = {
       relativeX: this.baseWidth / 10,
       relativeY: this.baseHeight / 10,
-      relativeWidth: this.baseWidth / 3,
+      relativeWidth: this.baseWidth - this.baseWidth / 5,
       relativeHeight: this.baseHeight / 1.5,
       relativeCellSize: undefined
     };
@@ -518,8 +518,11 @@ class GameDisplay {
       relativeWidth: this.baseWidth / 6,
       relativeHeight: this.baseHeight / 12,
       relativeX: undefined,
-      relativeY: undefined
+      relativeY: undefined,
+      relativeCellSize: undefined
     };
+
+    this.holdDisplay.relativeCellSize = this.holdDisplay.relativeWidth / 4;
 
     this.holdDisplay.relativeX = this.matrixDisplay.relativeX - this.holdDisplay.relativeWidth /* subtract margin*/;
     this.holdDisplay.relativeY = this.matrixDisplay.relativeY /* + an offset */;
@@ -528,11 +531,13 @@ class GameDisplay {
       relativeWidth: this.baseWidth / 6,
       relativeHeight: this.baseHeight / 12,
       relativeX: undefined,
-      relativeY: undefined
+      relativeY: undefined,
+      relativeCellSize: undefined,
     };
 
     this.queueDisplay.relativeX = this.matrixDisplay.relativeX + this.matrixDisplay.relativeWidth /* + margin */;
     this.queueDisplay.relativeY = this.matrixDisplay.relativeY /* + an offset */;
+    this.queueDisplay.relativeCellSize = 1 * findZoom(4, 3 * QUEUE_LENGTH, this.queueDisplay.relativeWidth, this.queueDisplay.relativeHeight);
 
   }
 
@@ -593,17 +598,23 @@ class GameDisplay {
       this.zoom * this.queueDisplay.relativeWidth,
       this.zoom * this.queueDisplay.relativeHeight
     );
+
+    let cellAbsoluteSize = zoom * this.queueDisplay.relativeCellSize;
   }
 
   displayHold() {
     // Equivalent to the drawing of the hold space in tetris.py's while running loop.
 
-    // Rect is a placeholder for the actual drawing
-    rect(this.x + this.zoom * this.holdDisplay.relativeX,
-      this.y + this.zoom * this.holdDisplay.relativeY,
-      this.zoom * this.holdDisplay.relativeWidth,
-      this.zoom * this.holdDisplay.relativeHeight
-    );
+    let cellAbsoluteSize = zoom * this.holdDisplay.relativeCellSize;
+    for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 5; j++) {
+        if (this.game.activePiece.image.includes(i * 5 + j)) {
+          let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + j * this.holdDisplay.relativeCellSize);
+          let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + i * this.holdDisplay.relativeCellSize);
+          image(sprites[skin][this.game.heldPieceType], heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+        }
+      }
+    }
   }
 
   displayAll() {
