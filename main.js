@@ -71,6 +71,9 @@ class Tetromino {
 
   // Returns the Tetromino's figure as found in tetromino-figures.json
   image(rotation = this.rotation, type = this.type) {
+    console.log("image attempted");
+    console.log(tetrominoFigures);
+    console.log(tetrominoFigures[type][rotation]);
     return tetrominoFigures[type][rotation];
   }
 
@@ -83,7 +86,7 @@ class Tetris {
   constructor() {
 
     // Display
-    this.display = new GameDisplay();
+    this.display = new GameDisplay(0, 0, 100, 100, this); //values for testing
 
     // Stats
     this.score = 0,
@@ -94,7 +97,7 @@ class Tetris {
     this.activePiece = null,
     this.heldPieceType = null,
     this.queue = [],
-    this.matrix = createNewMatrix(),
+    this.matrix = this.createNewMatrix(),
     
     // Movement
     this.holdUsed = false,
@@ -107,6 +110,10 @@ class Tetris {
     this.lockDelay = false,
     this.moveResetCounter = 0,
 
+    // Initialization
+    this.refillNextQueue();
+    this.advanceNextQueue();
+
     // Game State
     this.active = true;
   }
@@ -117,7 +124,7 @@ class Tetris {
     let newMatrix = [];
     for (let i = 0; i < MATRIX_HEIGHT; i++) {
       newMatrix.push([]);
-      for (let j = 0; j < MATRIX_WIDTH; i++) {
+      for (let j = 0; j < MATRIX_WIDTH; j++) {
         newMatrix[i].push(null);
       }
     }
@@ -352,7 +359,7 @@ class Tetris {
     // Advances the queue of upcoming Tetrominoes.
 
     if (this.activePiece === null) {
-      this.activePiece = Tetromino(this.queue.shift());
+      this.activePiece = new Tetromino(this.queue.shift());
     }
     else {
       throw new Error("Active Piece already exists.");
@@ -382,9 +389,10 @@ class Tetris {
   intersects(x = this.activePiece.x, y = this.activePiece.y, rotation = this.activePiece.rotation, type = this.activePiece.type) {
     // Returns true if the piece passed through the parameters intersects with the outer bounds of the matrix or a placed tetromino.
     let intersection = false;
+    let temp = this.activePiece.image(0, 0);
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
-        if (this.activePiece.image(rotation, type).includes(i * 5 + j)) {
+        if (temp.includes(i * 5 + j)) {
           if (
             this.matrix[y + i][x + j] !== null ||
             y + i < 0 ||
@@ -489,18 +497,18 @@ class GameDisplay {
   Similarly, moving the matrix's display within an instance down by 1/10 of the screen can be done by adding (1/10 * GameDisplay.baseHeight) to the matrixDisplay's 'y' value.
   */
 
-  constructor(x, y, w, h, sourceIndex) {
+  constructor(x, y, w, h, game) {
     // Relative to window
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
-    this.game = games[sourceIndex];
+    this.game = game;
 
     // Base dimensions and zoom
     this.baseWidth = 100;
     this.baseHeight = 100;
-    this.zoom = findZoom(baseWidth, baseHeight, w, h);
+    this.zoom = findZoom(this.baseWidth, this.baseHeight, w, h);
 
     // Sub-displays for matrix, hold, and queue that are scaled to the root display's dimensions in their draw functions
 
@@ -557,7 +565,9 @@ class GameDisplay {
         let cellAbsoluteX = this.x + this.zoom * (this.matrixDisplay.relativeX + j * this.matrixDisplay.relativeCellSize);
         let cellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + i * this.matrixDisplay.relativeCellSize);
 
-        image(sprites[skin][cellType], cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+        // image(sprites[skin][cellType], cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+        fill("green");
+        rect(cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
       }
     }
 
@@ -567,11 +577,13 @@ class GameDisplay {
     // Draw the ghost piece in the matrix (The active piece's position if it were to be hard-dropped)
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
-        if (this.game.activePiece.image.includes(i * 5 + j)) {
+        if (this.game.activePiece.image().includes(i * 5 + j)) {
           let ghostCellAbsoluteX = this.x + this.zoom * (this.matrixDisplay.relativeX + (this.game.activePiece.x + j) * this.matrixDisplay.relativeCellSize);
           let ghostCellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + (displayGhostPieceY + i) * this.matrixDisplay.relativeCellSize);
 
-          image(sprites[skin][2048 /* Ghost piece type needs to go here */], ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          // image(sprites[skin][2048 /* Ghost piece type needs to go here */], ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          fill("grey");
+          rect(ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
       }
     }
@@ -579,11 +591,13 @@ class GameDisplay {
     // Draw the active piece in the matrix
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
-        if (this.game.activePiece.image.includes(i * 5 + j)) {
+        if (this.game.activePiece.image().includes(i * 5 + j)) {
           let activeCellAbsoluteX = this.x + this.zoom * (this.matrixDisplay.relativeX + (this.game.activePiece.x + j) * this.matrixDisplay.relativeCellSize);
           let activeCellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + (this.game.activePiece.y + i) * this.matrixDisplay.relativeCellSize);
 
-          image(sprites[skin][this.game.activePiece.type], activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          // image(sprites[skin][this.game.activePiece.type], activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          fill("orange");
+          rect(activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
       }
     }
@@ -592,14 +606,23 @@ class GameDisplay {
   displayQueue() {
     // Equivalent to the drawing of the queue in tetris.py's while running loop.
 
-    // Rect is a placeholder for the actual drawing
-    rect(this.x + this.zoom * this.queueDisplay.relativeX,
-      this.y + this.zoom * this.queueDisplay.relativeY,
-      this.zoom * this.queueDisplay.relativeWidth,
-      this.zoom * this.queueDisplay.relativeHeight
-    );
-
     let cellAbsoluteSize = zoom * this.queueDisplay.relativeCellSize;
+
+    for (let queueIndex = 0; queueIndex < QUEUE_LENGTH; queueIndex++) {
+      let currentTetrominoType = this.game.queue[queueIndex];
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++) {
+          if (Tetromino.image(0, currentTetrominoType).includes(i * 5 + j)) {
+            let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + j * this.queueDisplay.relativeCellSize);
+            let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + i * this.queueDisplay.relativeCellSize);
+
+            // image(sprites[skin][currentTetrominoType], queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            fill("blue");
+            rect(queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          }
+        }
+      }
+    }
   }
 
   displayHold() {
@@ -608,10 +631,12 @@ class GameDisplay {
     let cellAbsoluteSize = zoom * this.holdDisplay.relativeCellSize;
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
-        if (this.game.activePiece.image.includes(i * 5 + j)) {
+        if (this.game.activePiece.image().includes(i * 5 + j)) {
           let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + j * this.holdDisplay.relativeCellSize);
           let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + i * this.holdDisplay.relativeCellSize);
-          image(sprites[skin][this.game.heldPieceType], heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          // image(sprites[skin][this.game.heldPieceType], heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          fill("red");
+          rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
       }
     }
@@ -629,16 +654,16 @@ function preload() {
   tetrominoFigures = loadJSON('/data-tables/tetromino-figures.json');
   tetrominoOffsetData = loadJSON('/data-tables/offset-data.json');
   levelGravities = loadJSON('/data-tables/level-gravities.json');
-  controls = loadJSON('/usersettings/controls.json');
+  controls = loadJSON('/user-settings/controls.json');
 
   // Loading sprites
-  let skinZero = [];
+  // let skinZero = [];
 
-  let skinZeroI = loadImage('/sprites/skin0/i-mino.png');
-  skinZero.push(skinZeroI);
+  // let skinZeroI = loadImage('/sprites/skin0/i-mino.png');
+  // skinZero.push(skinZeroI);
   /* and so on... */
 
-  sprites.push([skinZero]);
+  // sprites.push([skinZero]);
 }
 
 function setup() {
@@ -649,6 +674,9 @@ function setup() {
   keyHeldTimes.set(str(controls.moveLeft), 0);
   keyHeldTimes.set(str(controls.moveRight), 0);
   keyHeldTimes.set(str(controls.softDrop), 0);
+
+  let newGame = new Tetris();
+  games.push(newGame);
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
