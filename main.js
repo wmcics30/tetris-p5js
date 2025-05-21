@@ -393,6 +393,10 @@ class Tetris {
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
         if (temp.includes(i * 5 + j)) {
+          console.log("feeby");
+          console.log(this.matrix);
+          console.log(this.matrix[y + i]);
+          console.log(this.matrix[y + i][x + j]);
           if (
             this.matrix[y + i][x + j] !== null ||
             y + i < 0 ||
