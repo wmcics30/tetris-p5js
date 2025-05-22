@@ -71,9 +71,6 @@ class Tetromino {
 
   // Returns the Tetromino's figure as found in tetromino-figures.json
   image(rotation = this.rotation, type = this.type) {
-    console.log("image attempted");
-    console.log(tetrominoFigures);
-    console.log(tetrominoFigures[type][rotation]);
     return tetrominoFigures[type][rotation];
   }
 
@@ -87,6 +84,7 @@ class Tetris {
 
     // Display
     this.display = new GameDisplay(0, 0, 100, 100, this); //values for testing
+    this.ghostPieceY = undefined;
 
     // Stats
     this.score = 0,
@@ -97,7 +95,7 @@ class Tetris {
     this.activePiece = null,
     this.heldPieceType = null,
     this.queue = [],
-    this.matrix = this.createNewMatrix(),
+    this.matrix = Tetris.createNewMatrix(),
     
     // Movement
     this.holdUsed = false,
@@ -113,12 +111,13 @@ class Tetris {
     // Initialization
     this.refillNextQueue();
     this.advanceNextQueue();
+    this.findGhostPieceY();
 
     // Game State
     this.active = true;
   }
 
-  createNewMatrix() {
+  static createNewMatrix() {
     // Creates a 2D array of specified proportions in which every value is null.
 
     let newMatrix = [];
@@ -154,6 +153,7 @@ class Tetris {
             this.activePiece.x += offsetX;
             this.activePiece.y -= offsetY;
             this.activePiece.rotation = newRotation;
+            this.ghostPieceY = this.findGhostPieceY();
             break;
           }
         }
@@ -176,6 +176,7 @@ class Tetris {
             this.activePiece.x += offsetX;
             this.activePiece.y -= offsetY;
             this.activePiece.rotation = newRotation;
+            this.ghostPieceY = this.findGhostPieceY();
             break;
           }
         }
@@ -196,6 +197,7 @@ class Tetris {
             this.activePiece.x += offsetX;
             this.activePiece.y -= offsetY;
             this.activePiece.rotation = newRotation;
+            this.ghostPieceY = this.findGhostPieceY();
             break;
           }
         }
@@ -211,6 +213,7 @@ class Tetris {
     // Moves the active piece to the left or to the right.
     if (this.activePiece !== null && !this.intersects(this.activePiece.x + dx, undefined)) {
       this.activePiece.x += dx;
+      this.ghostPieceY = this.findGhostPieceY();
     }
   }
 
@@ -244,9 +247,11 @@ class Tetris {
 
         // Move the Active Piece to the Destination
         this.activePiece.y += dy;
+        this.ghostPieceY = this.findGhostPieceY();
 
         if (this.shouldPlaceTetromino()) {
           this.placeTetromino();
+          this.droppingHard = false;
         }
 
         // Start the 0.5 second Lock Delay timer if it isn't currently happening.
@@ -258,6 +263,7 @@ class Tetris {
       else {
         // Move the Active Piece to the Destination
         this.activePiece.y += dy;
+        this.ghostPieceY = this.findGhostPieceY();
       }
     }
   }
@@ -292,6 +298,7 @@ class Tetris {
 
     if (this.activePiece !== null && !this.holdUsed) {
       [this.activePiece, this.heldPieceType] = [Tetromino(this.heldPieceType), this.activePiece.type];
+      this.ghostPieceY = this.findGhostPieceY();
     }
   }
 
@@ -300,7 +307,7 @@ class Tetris {
     this.droppingSoft = false;
 
     while (this.droppingHard) {
-      this.moveTetrominoY(-1);
+      this.moveTetrominoY(1);
     }
   }
 
@@ -360,6 +367,7 @@ class Tetris {
 
     if (this.activePiece === null) {
       this.activePiece = new Tetromino(this.queue.shift());
+      this.ghostPieceY = this.findGhostPieceY();
     }
     else {
       throw new Error("Active Piece already exists.");
@@ -389,22 +397,19 @@ class Tetris {
   intersects(x = this.activePiece.x, y = this.activePiece.y, rotation = this.activePiece.rotation, type = this.activePiece.type) {
     // Returns true if the piece passed through the parameters intersects with the outer bounds of the matrix or a placed tetromino.
     let intersection = false;
-    let temp = this.activePiece.image(0, 0);
+    let temp = this.activePiece.image();
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
         if (temp.includes(i * 5 + j)) {
-          console.log("feeby");
-          console.log(this.matrix);
-          console.log(this.matrix[y + i]);
-          console.log(this.matrix[y + i][x + j]);
           if (
-            this.matrix[y + i][x + j] !== null ||
             y + i < 0 ||
             y + i > this.matrix.length - 1 ||
             x + j < 0 ||
-            x + j > this.matrix[y + i].length - 1
+            x + j > this.matrix[y + i].length - 1 ||
+            this.matrix[y + i][x + j] !== null
           ) {
             intersection = true;
+            console.log("interesects");
           }
         }
       }
@@ -576,7 +581,7 @@ class GameDisplay {
     }
 
     // Find the Y Position of the ghost piece
-    let displayGhostPieceY = this.game.findGhostPieceY();
+    let displayGhostPieceY = this.game.ghostPieceY;
 
     // Draw the ghost piece in the matrix (The active piece's position if it were to be hard-dropped)
     for (let i = 0; i < 5; i++) {
@@ -610,13 +615,13 @@ class GameDisplay {
   displayQueue() {
     // Equivalent to the drawing of the queue in tetris.py's while running loop.
 
-    let cellAbsoluteSize = zoom * this.queueDisplay.relativeCellSize;
+    let cellAbsoluteSize = this.zoom * this.queueDisplay.relativeCellSize;
 
     for (let queueIndex = 0; queueIndex < QUEUE_LENGTH; queueIndex++) {
       let currentTetrominoType = this.game.queue[queueIndex];
       for (let i = 0; i < 5; i++) {
         for (let j = 0; j < 5; j++) {
-          if (Tetromino.image(0, currentTetrominoType).includes(i * 5 + j)) {
+          if (this.game.activePiece.image(0, currentTetrominoType).includes(i * 5 + j)) {
             let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + j * this.queueDisplay.relativeCellSize);
             let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + i * this.queueDisplay.relativeCellSize);
 
@@ -632,7 +637,7 @@ class GameDisplay {
   displayHold() {
     // Equivalent to the drawing of the hold space in tetris.py's while running loop.
 
-    let cellAbsoluteSize = zoom * this.holdDisplay.relativeCellSize;
+    let cellAbsoluteSize = this.zoom * this.holdDisplay.relativeCellSize;
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
         if (this.game.activePiece.image().includes(i * 5 + j)) {
