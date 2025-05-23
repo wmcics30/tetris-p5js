@@ -83,7 +83,7 @@ class Tetris {
   constructor() {
 
     // Display
-    this.display = new GameDisplay(0, 0, 100, 100, this); //values for testing
+    this.display = new GameDisplay(100, 100, 300, 300, this); //values for testing
     this.ghostPieceY = undefined;
 
     // Stats
@@ -135,7 +135,11 @@ class Tetris {
     // Rotate the active Tetromino.
 
     if (this.activePiece !== null) {
-      let newRotation = (this.activePiece.rotation + rotationDistance) % 4;
+      let newRotation = this.activePiece.rotation + rotationDistance;
+      while (newRotation < 0) {
+        newRotation += 4;
+      }
+      newRotation %= 4;
       switch (this.activePiece.type) {
 
       // If active piece is an 'I' Tetromino, apply respective offset data.
@@ -286,6 +290,7 @@ class Tetris {
       }
 
       this.droppingHard = false;
+      this.activePiece = null;
 
       // Clear lines and advance the queue.
       this.clearLines();
@@ -297,7 +302,7 @@ class Tetris {
     // Swaps the active Tetromino with the one stored in the "hold" space.
 
     if (this.activePiece !== null && !this.holdUsed) {
-      [this.activePiece, this.heldPieceType] = [Tetromino(this.heldPieceType), this.activePiece.type];
+      [this.activePiece, this.heldPieceType] = [new Tetromino(this.heldPieceType), this.activePiece.type];
       this.ghostPieceY = this.findGhostPieceY();
     }
   }
@@ -367,6 +372,7 @@ class Tetris {
 
     if (this.activePiece === null) {
       this.activePiece = new Tetromino(this.queue.shift());
+      this.refillNextQueue();
       this.ghostPieceY = this.findGhostPieceY();
     }
     else {
@@ -397,7 +403,7 @@ class Tetris {
   intersects(x = this.activePiece.x, y = this.activePiece.y, rotation = this.activePiece.rotation, type = this.activePiece.type) {
     // Returns true if the piece passed through the parameters intersects with the outer bounds of the matrix or a placed tetromino.
     let intersection = false;
-    let temp = this.activePiece.image();
+    let temp = this.activePiece.image(rotation, type);
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
         if (temp.includes(i * 5 + j)) {
@@ -575,7 +581,12 @@ class GameDisplay {
         let cellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + i * this.matrixDisplay.relativeCellSize);
 
         // image(sprites[skin][cellType], cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-        fill("green");
+        if (cellType === null) {
+          fill("green");
+        }
+        else {
+          fill("red");
+        }
         rect(cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
       }
     }
@@ -591,7 +602,7 @@ class GameDisplay {
           let ghostCellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + (displayGhostPieceY + i) * this.matrixDisplay.relativeCellSize);
 
           // image(sprites[skin][2048 /* Ghost piece type needs to go here */], ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-          fill("grey");
+          fill("blue");
           rect(ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
       }
