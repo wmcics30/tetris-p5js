@@ -12,6 +12,8 @@ const MATRIX_HEIGHT = 20;
 const QUEUE_LENGTH = 5;
 const VANISH_ZONE_HEIGHT = 20;
 
+let temporaryTetrominoColors;
+  
 let autoStartDelay;
 let autoRepeatRate;
 let softDropSpeed;
@@ -71,7 +73,12 @@ class Tetromino {
 
   // Returns the Tetromino's figure as found in tetromino-figures.json
   image(rotation = this.rotation, type = this.type) {
-    return tetrominoFigures[type][rotation];
+    try {
+      return tetrominoFigures[type][rotation];
+    }
+    catch(TypeError) {
+      return ["wallace"];
+    }
   }
 
 }
@@ -295,6 +302,7 @@ class Tetris {
       // Clear lines and advance the queue.
       this.clearLines();
       this.advanceNextQueue();
+      this.holdUsed = false;
     }
   }
 
@@ -302,8 +310,17 @@ class Tetris {
     // Swaps the active Tetromino with the one stored in the "hold" space.
 
     if (this.activePiece !== null && !this.holdUsed) {
-      [this.activePiece, this.heldPieceType] = [new Tetromino(this.heldPieceType), this.activePiece.type];
-      this.ghostPieceY = this.findGhostPieceY();
+      this.holdUsed = true;
+      if (this.heldPieceType === null) {
+        this.heldPieceType = this.activePiece.type;
+        this.activePiece = null;
+        this.advanceNextQueue();
+        this.ghostPieceY = this.findGhostPieceY();
+      }
+      else {
+        [this.activePiece, this.heldPieceType] = [new Tetromino(this.heldPieceType), this.activePiece.type];
+        this.ghostPieceY = this.findGhostPieceY();
+      } 
     }
   }
 
@@ -323,7 +340,7 @@ class Tetris {
     let lines = 0;
 
     // Iterate through each row, starting at the top
-    for (let i = 0; i < this.matrix.length - 1; i++) {
+    for (let i = 0; i < this.matrix.length; i++) {
 
       // If the row is full,
       if (this.matrix[i].indexOf(null) === -1) {
@@ -443,8 +460,8 @@ class Tetris {
     let rightPassedDelay = rightTime > 10;
 
     // Checks for if leftTime and rightTime align with the auto-repeat rate, currently a constant and magic 10 frames.
-    let leftMatchesAutoRepeatRate = leftTime % 10 === 0;
-    let rightMatchesAutoRepeatRate = rightTime % 10 === 0;
+    let leftMatchesAutoRepeatRate = leftTime % 3 === 0;
+    let rightMatchesAutoRepeatRate = rightTime % 3 === 0;
 
     // If neither key matches the ARR, exit the function.
     if (!(leftMatchesAutoRepeatRate || rightMatchesAutoRepeatRate)) {
@@ -552,7 +569,7 @@ class GameDisplay {
 
     this.queueDisplay = {
       relativeWidth: this.baseWidth / 6,
-      relativeHeight: this.baseHeight / 12,
+      relativeHeight: this.baseHeight / 3,
       relativeX: undefined,
       relativeY: undefined,
       relativeCellSize: undefined,
@@ -585,7 +602,7 @@ class GameDisplay {
           fill("green");
         }
         else {
-          fill("red");
+          fill(temporaryTetrominoColors[cellType]);
         }
         rect(cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
       }
@@ -602,7 +619,7 @@ class GameDisplay {
           let ghostCellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + (displayGhostPieceY + i) * this.matrixDisplay.relativeCellSize);
 
           // image(sprites[skin][2048 /* Ghost piece type needs to go here */], ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-          fill("blue");
+          fill("purple");
           rect(ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
       }
@@ -633,12 +650,23 @@ class GameDisplay {
       for (let i = 0; i < 5; i++) {
         for (let j = 0; j < 5; j++) {
           if (this.game.activePiece.image(0, currentTetrominoType).includes(i * 5 + j)) {
-            let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + j * this.queueDisplay.relativeCellSize);
-            let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + i * this.queueDisplay.relativeCellSize);
+            if (currentTetrominoType === 0) {
+              let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + (j - 1) * this.queueDisplay.relativeCellSize);
+              let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (i + 4 * queueIndex - 1) * this.queueDisplay.relativeCellSize);
 
+              fill("blue");
+              rect(queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            }
+            else {
+              let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + j * this.queueDisplay.relativeCellSize);
+              let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (i + 4 * queueIndex) * this.queueDisplay.relativeCellSize);
+
+              fill("blue");
+              rect(queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            }
+            
             // image(sprites[skin][currentTetrominoType], queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-            fill("blue");
-            rect(queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            
           }
         }
       }
@@ -651,11 +679,11 @@ class GameDisplay {
     let cellAbsoluteSize = this.zoom * this.holdDisplay.relativeCellSize;
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
-        if (this.game.activePiece.image().includes(i * 5 + j)) {
+        if (this.game.heldPieceType !== null && this.game.activePiece.image(0, this.game.heldPieceType).includes(i * 5 + j)) {
           let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + j * this.holdDisplay.relativeCellSize);
           let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + i * this.holdDisplay.relativeCellSize);
           // image(sprites[skin][this.game.heldPieceType], heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-          fill("red");
+          fill("green");
           rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
       }
@@ -689,6 +717,7 @@ function preload() {
 function setup() {
   createCanvas(windowWidth, windowHeight);
   frameRate(60);
+  noStroke();
 
   keyHeldTimes = new Map();
   keyHeldTimes.set(str(controls.moveLeft), 0);
@@ -697,6 +726,17 @@ function setup() {
 
   let newGame = new Tetris();
   games.push(newGame);
+
+  temporaryTetrominoColors = [
+    color(0, 255, 255),
+    color(0, 0, 255), 
+    color(255, 127, 0), 
+    color(255, 255, 0), 
+    color(0, 255, 0), 
+    color(128, 0, 128), 
+    color(255, 0, 0), 
+    color(120, 120, 120)
+  ];
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
@@ -804,6 +844,7 @@ function draw() {
     games[i].display.displayAll();
   }
 
+  games[0].handleDAS();
 }
 
 // IJLOSTZ

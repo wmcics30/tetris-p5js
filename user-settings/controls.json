@@ -1,12 +1,12 @@
 {
     "moveLeft": "a",
     "moveRight": "d",
-    "softDrop": "SHIFT",
+    "softDrop": "Shift",
     "hardDrop": "s",
     "rotateLeft": "j",
     "rotateRight": "l",
     "rotate180": "k",
-    "hold": "FSLASH",
+    "hold": "/",
     "reset": "c",
-    "pause": "ESCAPE"
+    "pause": "Escape"
 }
