@@ -137,7 +137,7 @@ class Tetris {
     return newMatrix;
   }
 
-  // Active Piece Methods
+  // Active Piece / Matrix Methods
   rotateTetromino(rotationDistance = 0) {
     // Rotate the active Tetromino.
 
@@ -333,7 +333,6 @@ class Tetris {
     }
   }
 
-  // Matrix Methods
   clearLines() {
     // Clear rows in the matrix that are entirely full.
 
@@ -703,6 +702,8 @@ function preload() {
   tetrominoOffsetData = loadJSON('/data-tables/offset-data.json');
   levelGravities = loadJSON('/data-tables/level-gravities.json');
   controls = loadJSON('/user-settings/controls.json');
+
+  fleufhsluhfvjlkehsfsldk3 = loadJSON('/user-settings/das-arr-rates.json'); // fix this
 
   // Loading sprites
   // let skinZero = [];
