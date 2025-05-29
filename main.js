@@ -40,15 +40,16 @@ class Task {
   // 'args' are the arguments passed into the onExpiry function.
 
   // the Timer does not start by default.
-  constructor(label = "label", timer = 1000, targetObject = globalThis, onExpiry = () => {return -1;}, ...args) {
+  constructor(destination = games[0], label = "label", timer = 1000, targetObject = globalThis, onExpiry = () => {return -1;}, ...args) {
     this.timer = new Timer(timer);
     this.onExpiry = onExpiry;
     this.args = args;
     this.targetObject = targetObject;
     this.label = label;
+    this.destination = destination;
 
-    if (tasks.some((task) => task.label === this.label)) {
-      throw new Error("Task label already exists.");
+    if (destination.some((task) => task.label === this.label)) {
+      throw new Error("Attempted to create duplicate task.");
     }
   }
 }
@@ -92,6 +93,9 @@ class Tetris {
     // Display
     this.display = new GameDisplay(100, 100, 300, 300, this); //values for testing
     this.ghostPieceY = undefined;
+
+    // Asynchronous Stuff
+    this.tasks = [];
 
     // Stats
     this.score = 0,
@@ -703,7 +707,7 @@ function preload() {
   levelGravities = loadJSON('/data-tables/level-gravities.json');
   controls = loadJSON('/user-settings/controls.json');
 
-  fleufhsluhfvjlkehsfsldk3 = loadJSON('/user-settings/das-arr-rates.json'); // fix this
+  dasRates = loadJSON('/user-settings/das-arr-rates.json'); // fix this
 
   // Loading sprites
   // let skinZero = [];
@@ -824,14 +828,16 @@ function increaseKeyHeldTimes() {
 
 function runTasks() {
   // Checks each task, sees if its timer is expired. if so, executes the specified function.
-  for (let task of tasks) {
-    if (task.timer.expired()) {
-      let targetObject = task.targetObject;
-      let onExpiry = task.onExpiry;
-      let args = task.args;
+  for (let theGame of games) {
+    for (let task of theGame.tasks) {
+      if (task.timer.expired()) {
+        let targetObject = task.targetObject;
+        let onExpiry = task.onExpiry;
+        let args = task.args;
 
-      // Calls the onExpiry function on targetObject with the appropriate arguments.
-      onExpiry.call(targetObject, ...args);
+        // Calls the onExpiry function on targetObject with the appropriate arguments.
+        onExpiry.call(targetObject, ...args);
+      }
     }
   }
 }
