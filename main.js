@@ -16,7 +16,7 @@ let temporaryTetrominoColors;
   
 let autoStartDelay;
 let autoRepeatRate;
-let softDropSpeed;
+let softDropSpeed = 10;
 
 let tetrominoFigures;
 let tetrominoOffsetData;
@@ -445,13 +445,16 @@ class Tetris {
 
   // Game Loop Stuff ????? Needs to be reorganized at some point
   doGravity() {
-    // you're never gonna believe what this does
-
-    // If current frame % levelGravities[currentLevel][0] === 0, move piece down levelGravities[currentLevel][1] spaces.
-    // If current level exceeds 15, use 15
-    // why are there only 14 levels
-    // uses 60fps
-    // ok so there are 14 levels because with my rounding level 15 is infinitely fast so I just removed it
+    try {
+      if (frameCount % levelGravities[this.level][0] === 0) {
+        this.moveTetrominoY(levelGravities[this.level][1]);
+      }
+    }
+    catch(rangeError) {
+      if (frameCount % levelGravities[15][0] === 0) {
+        this.moveTetrominoY(levelGravities[15][1]);
+      }
+    }
   }
 
   handleDAS() {
@@ -494,6 +497,12 @@ class Tetris {
     else {
       // No DAS movement occurs
       return -1;
+    }
+  }
+
+  handleSoftDrop() {
+    if (frameCount % 5 === 0 && this.droppingSoft) {
+      this.moveTetrominoY(1);
     }
   }
 
@@ -771,6 +780,7 @@ function keyPressed() {
   }
 
   if (key === controls.moveRight) {
+    //
     games[0].moveTetrominoX(1);
     keyHeldTimes.set(str(controls.moveRight), 1);
   }
@@ -787,8 +797,8 @@ function keyPressed() {
     games[0].hardDrop();
   }
 
-  else if (key === controls.softDrop) {
-    keyHeldTimes.set(str(controls.softDrop), 1);
+  if (key === controls.softDrop) {
+    games[0].droppingSoft = true;
   }
 
   if (key === controls.pause) {
@@ -804,7 +814,7 @@ function keyReleased() {
     keyHeldTimes.set(str(controls.moveRight), 0);
   }
   if (key === controls.softDrop) {
-    keyHeldTimes.set(str(controls.softDrop), 0);
+    games[0].droppingSoft = false;
   }
 }
 
@@ -846,12 +856,14 @@ function draw() {
   background(220);
   increaseKeyHeldTimes();
 
+  games[0].handleDAS();
+  games[0].handleSoftDrop();
+  games[0].doGravity();
+
   // Display each active game
   for (let i = 0; i < games.length; i++) {
     games[i].display.displayAll();
   }
-
-  games[0].handleDAS();
 }
 
 // IJLOSTZ
