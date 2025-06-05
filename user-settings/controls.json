@@ -1,12 +1,13 @@
 {
-    "moveLeft": "a",
-    "moveRight": "d",
-    "softDrop": "Shift",
-    "hardDrop": "s",
-    "rotateLeft": "j",
-    "rotateRight": "l",
-    "rotate180": "k",
-    "hold": "/",
-    "reset": "c",
-    "pause": "Escape"
+    "moveLeft": "KeyA",
+    "moveRight": "KeyD",
+    "softDrop": "ShiftLeft",
+    "hardDrop": "KeyS",
+    "rotateLeft": "KeyJ",
+    "rotateRight": "KeyL",
+    "rotate180": "KeyK",
+    "hold": "Slash",
+    "reset": "KeyC",
+    "pause": "Escape",
+    "_comment": "use the event.code property of a KeyboardEvent object."
 }

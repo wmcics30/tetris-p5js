@@ -1,0 +1,13 @@
+{
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "softDrop": "ArrowDown",
+    "hardDrop": "Space",
+    "rotateLeft": "KeyZ",
+    "rotateRight": "KeyX",
+    "rotate180": "KeyA",
+    "hold": "LeftShift",
+    "reset": "3",
+    "pause": "Escape",
+    "_comment": "use the event.code property of a KeyboardEvent object."
+}

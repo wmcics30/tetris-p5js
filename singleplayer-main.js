@@ -3,8 +3,7 @@
 // 5/7/2025
 //
 // Extra for Experts:
-// Heavy use of Classes, JSON, Additional Libraries,
-// Asynchronous events with p5js Timer library, 
+// Heavy use of Classes, JSON,
 // various operators and methods [examples include shift(), spread and rest operators, call()]
 
 const MATRIX_WIDTH = 10;
@@ -12,9 +11,8 @@ const MATRIX_HEIGHT = 20;
 const QUEUE_LENGTH = 5;
 const VANISH_ZONE_HEIGHT = 20;
 
-
 let autoStartDelay = 10;
-let autoRepeatRate = 3;
+let autoRepeatRate = 3; // All of these are frames-per-delay/repetition, higher is slower
 let softDropSpeed = 3;
 
 let temporaryTetrominoColors;
@@ -66,10 +64,10 @@ class Tetris {
   // A game of Tetris.
 
   // Setup
-  constructor() {
+  constructor(displayX, displayY, displayW, displayH) {
 
     // Display
-    this.display = new GameDisplay(100, 100, 300, 300, this); //values for testing
+    this.display = new GameDisplay(displayX, displayY, displayW, displayH, this); //values for testing
     this.ghostPieceY = undefined;
 
     // Asynchronous Stuff
@@ -359,10 +357,11 @@ class Tetris {
       break;
     }
 
-    // Adding to linesCleared and increasing level
+    // Adding to linesCleared and increasing level (if statement so you can cheat your level upwards without it resetting every time a piece is placed)
     this.linesCleared += lines;
-    this.level = Math.floor(this.linesCleared / 10);
-
+    if (Math.floor(this.linesCleared / 10) > this.level) {
+      this.level = Math.floor(this.linesCleared / 10);
+    }
   }
 
   // Queue Methods
@@ -429,9 +428,8 @@ class Tetris {
       }
     }
     catch(rangeError) {
-      console.log("gravity range error");
-      if (frameCount % levelGravities[15][0] === 0) {
-        this.moveTetrominoY(levelGravities[15][1]);
+      if (frameCount % levelGravities[levelGravities.length - 1][0] === 0) {
+        this.moveTetrominoY(levelGravities[levelGravities.length - 1][1]);
       }
     }
   }
@@ -717,6 +715,8 @@ function preload() {
 }
 
 function setup() {
+  levelGravities = Object.values(levelGravities);
+
   createCanvas(windowWidth, windowHeight);
   frameRate(60);
   noStroke();
@@ -739,7 +739,7 @@ function setup() {
     color(0, 0, 0) // 9: Black
   ];
 
-  theGame = new Tetris();
+  theGame = new Tetris(100, 100, 300, 300);
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
@@ -754,55 +754,56 @@ function findZoom(targetW, targetH, destinationW, destinationH) {
   return zoom;
 } 
 
-function keyPressed() {
-  if (key === controls.reset) {
+function keyPressed(event) {
+  if (event.code === controls.reset) {
 
   }
-  if (key === controls.rotateRight) {
+  if (event.code === controls.rotateRight) {
     theGame.rotateTetromino(1);
   }
-  else if (key === controls.rotateLeft) {
+  else if (event.code === controls.rotateLeft) {
     theGame.rotateTetromino(-1);
   }
-  else if (key === controls.rotate180) {
+  else if (event.code === controls.rotate180) {
     theGame.rotateTetromino(2);
   }
 
-  if (key === controls.moveRight) {
+  if (event.code === controls.moveRight) {
     //
     theGame.moveTetrominoX(1);
     keyHeldTimes.set(str(controls.moveRight), 1);
   }
-  if (key === controls.moveLeft) {
+  if (event.code === controls.moveLeft) {
     theGame.moveTetrominoX(-1);
     keyHeldTimes.set(str(controls.moveLeft), 1);
   }
 
-  if (key === controls.hold) {
+  if (event.code === controls.hold) {
     theGame.holdTetromino();
   }
 
-  if (key === controls.hardDrop) {
+  if (event.code === controls.hardDrop) {
     theGame.hardDrop();
   }
 
-  if (key === controls.softDrop) {
+  if (event.code === controls.softDrop) {
     keyHeldTimes.set(str(controls.softDrop), 1);
+    return false;
   }
 
-  if (key === controls.pause) {
+  if (event.code === controls.pause) {
 
   }
 }
 
-function keyReleased() {
-  if (key === controls.moveLeft) {
+function keyReleased(event) {
+  if (event.code === controls.moveLeft) {
     keyHeldTimes.set(str(controls.moveLeft), 0);
   }
-  if (key === controls.moveRight) {
+  if (event.code === controls.moveRight) {
     keyHeldTimes.set(str(controls.moveRight), 0);
   }
-  if (key === controls.softDrop) {
+  if (event.code === controls.softDrop) {
     keyHeldTimes.set(str(controls.softDrop), 0);
   }
 }
