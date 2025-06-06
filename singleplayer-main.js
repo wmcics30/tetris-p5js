@@ -534,8 +534,15 @@ class GameDisplay {
     this.baseHeight = 100;
     this.zoom = findZoom(this.baseWidth, this.baseHeight, w, h);
 
-    // Sub-displays for matrix, hold, and queue that are scaled to the root display's dimensions in their draw functions
+    // Sub-displays for matrix, hold, and queue that are scaled to the root display's dimensions.
+    this.createMatrixDisplay();
+    this.createQueueDisplay();
+    this.createHoldDisplay();
+  }
 
+  // Sub-Display creators. Would be static, but the Hold and Queue displays rely on the Matrix display.
+  createMatrixDisplay() {
+    // Create a display for the game's Matrix. Organization function.
     this.matrixDisplay = {
       relativeX: this.baseWidth / 10,
       relativeY: this.baseHeight / 10,
@@ -546,6 +553,28 @@ class GameDisplay {
 
     this.matrixDisplay.relativeCellSize = this.matrixDisplay.relativeWidth / MATRIX_WIDTH;
 
+    return 0;
+  }
+
+  createQueueDisplay() {
+    // Create a display for the game's Queue of upcoming pieces. Organization function.
+    this.queueDisplay = {
+      relativeCellSize: 6,
+      relativeWidth: undefined,
+      relativeHeight: undefined,
+      relativeX: this.matrixDisplay.relativeX + this.matrixDisplay.relativeWidth /* + a margin */,
+      relativeY: this.matrixDisplay.relativeY /* + a margin */,
+      gapBetweenTetrominoes: 1
+    };
+
+    this.queueDisplay.relativeHeight = this.queueDisplay.relativeCellSize * (1 + (2 + this.queueDisplay.gapBetweenTetrominoes) * QUEUE_LENGTH);
+    this.queueDisplay.relativeWidth = this.queueDisplay.relativeCellSize * 4;
+
+    return 0;
+  }
+
+  createHoldDisplay() {
+    // Create the display for the Hold space. Organization function.
     this.holdDisplay = {
       relativeWidth: this.baseWidth / 6,
       relativeHeight: this.baseHeight / 12,
@@ -559,20 +588,10 @@ class GameDisplay {
     this.holdDisplay.relativeX = this.matrixDisplay.relativeX - this.holdDisplay.relativeWidth /* subtract margin*/;
     this.holdDisplay.relativeY = this.matrixDisplay.relativeY /* + an offset */;
 
-    this.queueDisplay = {
-      relativeWidth: this.baseWidth / 6,
-      relativeHeight: this.baseHeight / 3,
-      relativeX: undefined,
-      relativeY: undefined,
-      relativeCellSize: undefined,
-    };
-
-    this.queueDisplay.relativeX = this.matrixDisplay.relativeX + this.matrixDisplay.relativeWidth /* + margin */;
-    this.queueDisplay.relativeY = this.matrixDisplay.relativeY /* + an offset */;
-    this.queueDisplay.relativeCellSize = 1 * findZoom(4, 3 * QUEUE_LENGTH, this.queueDisplay.relativeWidth, this.queueDisplay.relativeHeight);
-
+    return 0;
   }
 
+  // Equivalent to draw functions.
   displayMatrix() {
     // Temporary variable for the absolute size of a cell in the matrix
     let cellAbsoluteSize = this.zoom * this.matrixDisplay.relativeCellSize;
@@ -652,13 +671,13 @@ class GameDisplay {
             fill(temporaryTetrominoColors[currentTetrominoType]);
             if (currentTetrominoType === 0) {
               let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + (j - 1) * this.queueDisplay.relativeCellSize);
-              let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (i + 4 * queueIndex - 1) * this.queueDisplay.relativeCellSize);
+              let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (i + (2 + this.queueDisplay.gapBetweenTetrominoes) * queueIndex) * this.queueDisplay.relativeCellSize);
 
               rect(queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
             }
             else {
               let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + j * this.queueDisplay.relativeCellSize);
-              let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (i + 4 * queueIndex) * this.queueDisplay.relativeCellSize);
+              let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (1 + i + (2 + this.queueDisplay.gapBetweenTetrominoes) * queueIndex) * this.queueDisplay.relativeCellSize);
 
               rect(queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
             }
@@ -675,14 +694,23 @@ class GameDisplay {
     // Equivalent to the drawing of the hold space in tetris.py's while running loop.
 
     let cellAbsoluteSize = this.zoom * this.holdDisplay.relativeCellSize;
+    let currentTetrominoType = this.game.heldPieceType;
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
-        if (this.game.heldPieceType !== null && this.game.activePiece.image(0, this.game.heldPieceType).includes(i * 5 + j)) {
-          let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + j * this.holdDisplay.relativeCellSize);
-          let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + i * this.holdDisplay.relativeCellSize);
+        if (currentTetrominoType !== null && this.game.activePiece.image(0, currentTetrominoType).includes(i * 5 + j)) {
+          fill(temporaryTetrominoColors[currentTetrominoType]);
+
+          if (currentTetrominoType === 0) {
+            let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + (j - 1) * this.holdDisplay.relativeCellSize);
+            let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + (i - 1) * this.holdDisplay.relativeCellSize);
+            rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          }
+          else {
+            let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + j * this.holdDisplay.relativeCellSize);
+            let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + i * this.holdDisplay.relativeCellSize);
+            rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          }
           // image(sprites[skin][this.game.heldPieceType], heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-          fill(temporaryTetrominoColors[this.game.heldPieceType]);
-          rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
       }
     }
@@ -691,8 +719,8 @@ class GameDisplay {
   displayAll() {
     // Runs all other display functions.
     this.displayMatrix();
-    this.displayHold();
     this.displayQueue();
+    this.displayHold();
   }
 }
 
