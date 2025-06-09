@@ -9,7 +9,8 @@
 const MATRIX_WIDTH = 10;
 const MATRIX_HEIGHT = 20;
 const QUEUE_LENGTH = 5;
-const VANISH_ZONE_HEIGHT = 20;
+
+const SPRINT_REQUIREMENT = 4;
 
 let autoStartDelay = 10;
 let autoRepeatRate = 3; // All of these are frames-per-delay/repetition, higher is slower
@@ -30,20 +31,21 @@ let theGame;
 
 let sprites = [];
 let skin = 0;
+let colourOrSprite = "sprite";
 
 class Tetromino {
   // a singular Tetris piece.
   constructor(type = 0) {
-    this.type = type,
+    this.type = type;
     this.rotation = 0;
 
     // Applies offset to I tetromino's spawning coordinates, aligning its position with the other 6 tetrominoes.
     if (this.type !== 0) {
-      this.x = 3,
+      this.x = Math.floor((MATRIX_WIDTH - 4) / 2);
       this.y = 1;
     }
     else {
-      this.x = 2,
+      this.x = Math.floor((MATRIX_WIDTH - 4) / 2) - 1;
       this.y = 0;
     }
 
@@ -65,34 +67,38 @@ class Tetris {
   // A game of Tetris.
 
   // Setup
-  constructor(displayX, displayY, displayW, displayH) {
+  constructor(displayX, displayY, displayW, displayH, gameMode = "marathon", startingLevel = 0) {
 
     // Display
     this.display = new GameDisplay(displayX, displayY, displayW, displayH, this);
     this.ghostPieceY = undefined;
 
+    // Game Modes
+    this.gameMode = gameMode;
+    this.sprintStartTime = millis();
+
     // Stats
-    this.score = 0,
-    this.level = 0,
-    this.linesCleared = 0,
+    this.score = 0;
+    this.level = startingLevel;
+    this.linesCleared = 0;
 
     // Tetromino Placement
-    this.activePiece = null,
-    this.heldPieceType = null,
-    this.queue = [],
-    this.matrix = Tetris.createNewMatrix(),
+    this.activePiece = null;
+    this.heldPieceType = null;
+    this.queue = [];
+    this.matrix = Tetris.createNewMatrix();
     
     // Movement
-    this.holdUsed = false,
-    this.droppingHard = false,
-    this.droppingSoft = false,
-    this.delayedAutoStart = null,
-    this.autoRepeat = true,
+    this.holdUsed = false;
+    this.droppingHard = false;
+    this.droppingSoft = false;
+    this.delayedAutoStart = null;
+    this.autoRepeat = true;
     
     // Lock Delay & Move Reset
-    this.lockDelay = false,
+    this.lockDelay = false;
     this.lockDelayTimer = lockDelayTime;
-    this.moveResetCounter = 0,
+    this.moveResetCounter = 0;
 
     // Initialization
     this.refillNextQueue();
@@ -406,6 +412,11 @@ class Tetris {
     if (Math.floor(this.linesCleared / 10) > this.level) {
       this.level = Math.floor(this.linesCleared / 10);
     }
+
+    if (this.gameMode === "sprint" && this.linesCleared >= SPRINT_REQUIREMENT) {
+      this.active = false;
+      this.finalSprintTime = millis() - this.sprintStartTime;
+    }
   }
 
   moveReset() {
@@ -576,6 +587,11 @@ class Tetris {
       throw new Error("Active piece does not exist.");
     }
   }
+
+  handleSprintTimer() {
+    let sprintTime = millis() - this.sprintStartTime();
+    // do something with that value if you're playing sprint
+  }
 }
 
 class GameDisplay {
@@ -687,16 +703,34 @@ class GameDisplay {
         let cellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + i * this.matrixDisplay.relativeCellSize);
 
         // image(sprites[skin][cellType], cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-        if (cellType === null) {
-          fill(temporaryTetrominoColors[9]);
+
+        if (colourOrSprite === "colour") {
+          if (cellType === null) {
+            fill(temporaryTetrominoColors[9]);
+          }
+          else if (!this.game.active) {
+            fill(temporaryTetrominoColors[8]);
+          }
+          else {
+            fill(temporaryTetrominoColors[cellType]);
+          }
+          rect(cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
-        else if (!this.game.active) {
-          fill(temporaryTetrominoColors[8]);
+
+        else if (colourOrSprite === "sprite") {
+          if (cellType === null) {
+            fill(temporaryTetrominoColors[9]);
+            rect(cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          }
+          else if (!this.game.active) {
+            fill(temporaryTetrominoColors[8]);
+            rect(cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            image(sprites[skin][7], cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          }
+          else {
+            image(sprites[skin][cellType], cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          }
         }
-        else {
-          fill(temporaryTetrominoColors[cellType]);
-        }
-        rect(cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
       }
     }
 
@@ -711,27 +745,43 @@ class GameDisplay {
           let ghostCellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + (displayGhostPieceY + i) * this.matrixDisplay.relativeCellSize);
 
           // image(sprites[skin][2048 /* Ghost piece type needs to go here */], ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-          fill(temporaryTetrominoColors[8]);
-          rect(ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          if (colourOrSprite === "colour") {
+            fill(temporaryTetrominoColors[8]);
+            rect(ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          }
+          else if (colourOrSprite === "sprite") {
+            image(sprites[skin][7], ghostCellAbsoluteX, ghostCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          }
         }
       }
     }
 
-    // Draw the active piece in the matrix
+    // Draw the active tetromino in the matrix
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
         if (this.game.activePiece.image().includes(i * 5 + j)) {
           let activeCellAbsoluteX = this.x + this.zoom * (this.matrixDisplay.relativeX + (this.game.activePiece.x + j) * this.matrixDisplay.relativeCellSize);
           let activeCellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + (this.game.activePiece.y + i) * this.matrixDisplay.relativeCellSize);
 
-          // image(sprites[skin][this.game.activePiece.type], activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-          if (this.game.active) {
-            fill(temporaryTetrominoColors[this.game.activePiece.type]);
+          if (colourOrSprite === "colour") {
+            if (this.game.active) {
+              fill(temporaryTetrominoColors[this.game.activePiece.type]);
+            }
+            else {
+              fill(temporaryTetrominoColors[8]);
+            }
+            rect(activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
           }
-          else {
-            fill(temporaryTetrominoColors[8]);
+          else if (colourOrSprite === "sprite") {
+            if (this.game.active) {
+              image(sprites[skin][this.game.activePiece.type], activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            }
+            else {
+              fill(temporaryTetrominoColors[8]);
+              rect(activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+              image(sprites[skin][7], activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            }
           }
-          rect(activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
       }
     }
@@ -756,22 +806,41 @@ class GameDisplay {
       for (let i = 0; i < 5; i++) {
         for (let j = 0; j < 5; j++) {
           if (this.game.activePiece.image(0, currentTetrominoType).includes(i * 5 + j)) {
-            fill(temporaryTetrominoColors[currentTetrominoType]);
-            if (currentTetrominoType === 0) {
-              let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + (j - 1) * this.queueDisplay.relativeCellSize);
-              let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (i + (2 + this.queueDisplay.gapBetweenTetrominoes) * queueIndex) * this.queueDisplay.relativeCellSize);
-
-              rect(queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-            }
-            else {
-              let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + j * this.queueDisplay.relativeCellSize);
-              let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (1 + i + (2 + this.queueDisplay.gapBetweenTetrominoes) * queueIndex) * this.queueDisplay.relativeCellSize);
-
-              rect(queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-            }
             
-            // image(sprites[skin][currentTetrominoType], queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-            
+            if (colourOrSprite === "colour") {
+              fill(temporaryTetrominoColors[currentTetrominoType]);
+
+              // Applies offset to I tetromino
+              if (currentTetrominoType === 0) {
+                let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + (j - 1) * this.queueDisplay.relativeCellSize);
+                let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (i + (2 + this.queueDisplay.gapBetweenTetrominoes) * queueIndex) * this.queueDisplay.relativeCellSize);
+  
+                rect(queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+              }
+
+              // All other tetrominoes
+              else {
+                let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + j * this.queueDisplay.relativeCellSize);
+                let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (1 + i + (2 + this.queueDisplay.gapBetweenTetrominoes) * queueIndex) * this.queueDisplay.relativeCellSize);
+  
+                rect(queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+              }
+            }
+
+            else if (colourOrSprite === "sprite") {
+              if (currentTetrominoType === 0) {
+                let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + (j - 1) * this.queueDisplay.relativeCellSize);
+                let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (i + (2 + this.queueDisplay.gapBetweenTetrominoes) * queueIndex) * this.queueDisplay.relativeCellSize);
+  
+                image(sprites[skin][currentTetrominoType], queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+              }
+              else {
+                let queueCellAbsoluteX = this.x + this.zoom * (this.queueDisplay.relativeX + j * this.queueDisplay.relativeCellSize);
+                let queueCellAbsoluteY = this.y + this.zoom * (this.queueDisplay.relativeY + (1 + i + (2 + this.queueDisplay.gapBetweenTetrominoes) * queueIndex) * this.queueDisplay.relativeCellSize);
+  
+                image(sprites[skin][currentTetrominoType], queueCellAbsoluteX, queueCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+              }
+            }
           }
         }
       }
@@ -783,6 +852,7 @@ class GameDisplay {
 
     let cellAbsoluteSize = this.zoom * this.holdDisplay.relativeCellSize;
 
+    // Background
     if (this.showUIBackground === true) {
       fill(temporaryTetrominoColors[9]);
       let backgroundAbsoluteX = this.x + this.zoom * this.holdDisplay.relativeX;
@@ -790,23 +860,39 @@ class GameDisplay {
       rect(backgroundAbsoluteX, backgroundAbsoluteY, this.zoom * this.holdDisplay.relativeWidth, this.zoom * this.holdDisplay.relativeHeight);
     }
 
+    // Main
     let currentTetrominoType = this.game.heldPieceType;
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
         if (currentTetrominoType !== null && this.game.activePiece.image(0, currentTetrominoType).includes(i * 5 + j)) {
-          fill(temporaryTetrominoColors[currentTetrominoType]);
 
-          if (currentTetrominoType === 0) {
-            let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + (j - 1) * this.holdDisplay.relativeCellSize);
-            let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + (i - 1) * this.holdDisplay.relativeCellSize);
-            rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+          if (colourOrSprite === "colour") {
+            fill(temporaryTetrominoColors[currentTetrominoType]);
+  
+            if (currentTetrominoType === 0) {
+              let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + (j - 1) * this.holdDisplay.relativeCellSize);
+              let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + (i - 1) * this.holdDisplay.relativeCellSize);
+              rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            }
+            else {
+              let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + (j + 1) * this.holdDisplay.relativeCellSize);
+              let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + i * this.holdDisplay.relativeCellSize);
+              rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            }
           }
-          else {
-            let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + (j + 1) * this.holdDisplay.relativeCellSize);
-            let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + i * this.holdDisplay.relativeCellSize);
-            rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+
+          else if (colourOrSprite === "sprite") {
+            if (currentTetrominoType === 0) {
+              let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + (j - 1) * this.holdDisplay.relativeCellSize);
+              let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + (i - 1) * this.holdDisplay.relativeCellSize);
+              image(sprites[skin][this.game.heldPieceType], heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            }
+            else {
+              let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + (j + 1) * this.holdDisplay.relativeCellSize);
+              let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + i * this.holdDisplay.relativeCellSize);
+              image(sprites[skin][this.game.heldPieceType], heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
+            }
           }
-          // image(sprites[skin][this.game.heldPieceType], heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
       }
     }
@@ -832,11 +918,30 @@ function preload() {
   let skinZero = [];
 
   let skinZeroI = loadImage('/sprites/skin0/I.png');
-  // let skinZeroI = loadImage('/sprites/skin0/i-mino.png');
-  // skinZero.push(skinZeroI);
-  /* and so on... */
+  skinZero.push(skinZeroI);
 
-  // sprites.push([skinZero]);
+  let skinZeroJ = loadImage('/sprites/skin0/J.png');
+  skinZero.push(skinZeroJ);
+
+  let skinZeroL = loadImage('/sprites/skin0/L.png');
+  skinZero.push(skinZeroL);
+
+  let skinZeroO = loadImage('/sprites/skin0/O.png');
+  skinZero.push(skinZeroO);
+
+  let skinZeroS = loadImage('/sprites/skin0/S.png');
+  skinZero.push(skinZeroS);
+
+  let skinZeroT = loadImage('/sprites/skin0/T.png');
+  skinZero.push(skinZeroT);
+
+  let skinZeroZ = loadImage('/sprites/skin0/Z.png');
+  skinZero.push(skinZeroZ);
+
+  let skinZeroGhost = loadImage('/sprites/skin0/Ghost.png');
+  skinZero.push(skinZeroGhost);
+  
+  sprites.push(skinZero);
 }
 
 function setup() {
@@ -865,8 +970,12 @@ function setup() {
     color(0, 0, 0) // 9: Black
   ];
 
+  startGame("marathon");
+}
+
+function startGame(gameMode) {
   let gameZoom = findZoom(300, 300, windowWidth, windowHeight);
-  theGame = new Tetris((windowWidth - gameZoom * 300) / 2, (windowHeight - gameZoom * 300) / 2, gameZoom * 300, gameZoom * 300);
+  theGame = new Tetris((windowWidth - gameZoom * 300) / 2, (windowHeight - gameZoom * 300) / 2, gameZoom * 300, gameZoom * 300, gameMode);
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
@@ -885,10 +994,13 @@ function findZoom(targetW, targetH, destinationW, destinationH) {
 } 
 
 function keyPressed(event) {
-  if (event.code === controls.reset) {
-    let gameZoom = findZoom(300, 300, windowWidth, windowHeight);
-    theGame = new Tetris((windowWidth - gameZoom * 300) / 2, (windowHeight - gameZoom * 300) / 2, gameZoom * 300, gameZoom * 300);
+  if (event.code === controls.startMarathon) {
+    startGame("marathon");
   }
+  else if (event.code === controls.startSprint) {
+    startGame("sprint");
+  }
+
   if (event.code === controls.rotateRight) {
     theGame.rotateTetromino(1);
   }
