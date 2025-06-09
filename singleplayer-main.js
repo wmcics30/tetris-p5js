@@ -15,6 +15,8 @@ let autoStartDelay = 10;
 let autoRepeatRate = 3; // All of these are frames-per-delay/repetition, higher is slower
 let softDropSpeed = 3;
 
+let lockDelayTime = 30;
+
 let temporaryTetrominoColors;
 
 let tetrominoFigures;
@@ -67,11 +69,8 @@ class Tetris {
   constructor(displayX, displayY, displayW, displayH) {
 
     // Display
-    this.display = new GameDisplay(displayX, displayY, displayW, displayH, this); //values for testing
+    this.display = new GameDisplay(displayX, displayY, displayW, displayH, this);
     this.ghostPieceY = undefined;
-
-    // Asynchronous Stuff
-    this.tasks = [];
 
     // Stats
     this.score = 0,
@@ -145,6 +144,7 @@ class Tetris {
             this.activePiece.x += offsetX;
             this.activePiece.y -= offsetY;
             this.activePiece.rotation = newRotation;
+            this.moveReset();
             this.ghostPieceY = this.findGhostPieceY();
             break;
           }
@@ -168,6 +168,7 @@ class Tetris {
             this.activePiece.x += offsetX;
             this.activePiece.y -= offsetY;
             this.activePiece.rotation = newRotation;
+            this.moveReset();
             this.ghostPieceY = this.findGhostPieceY();
             break;
           }
@@ -189,6 +190,7 @@ class Tetris {
             this.activePiece.x += offsetX;
             this.activePiece.y -= offsetY;
             this.activePiece.rotation = newRotation;
+            this.moveReset();
             this.ghostPieceY = this.findGhostPieceY();
             break;
           }
@@ -206,6 +208,8 @@ class Tetris {
     if (this.activePiece !== null && !this.intersects(this.activePiece.x + dx, undefined)) {
       this.activePiece.x += dx;
       this.ghostPieceY = this.findGhostPieceY();
+      
+      this.moveReset();
     }
   }
 
@@ -244,18 +248,30 @@ class Tetris {
         if (this.shouldPlaceTetromino()) {
           this.placeTetromino();
           this.droppingHard = false;
+          
+          this.lockDelay = false;
+          this.lockDelayTimer = lockDelayTime;
+          this.moveResetCounter = 0;
         }
 
         // Start the 0.5 second Lock Delay timer if it isn't currently happening.
         else if (!this.lockDelay) {
           this.lockDelay = true;
+          this.lockDelayTimer = lockDelayTime;
           this.moveResetCounter = 0;
         }
       }
+
       else {
         // Move the Active Piece to the Destination
         this.activePiece.y += dy;
         this.ghostPieceY = this.findGhostPieceY();
+
+        if (this.moveResetCounter < 15) {
+          this.lockDelay = false;
+          this.lockDelayTimer = lockDelayTime;
+          this.moveResetCounter = 0;
+        }
       }
     }
   }
@@ -364,6 +380,13 @@ class Tetris {
     }
   }
 
+  moveReset() {
+    if (this.lockDelay === true && this.moveResetCounter < 15) {
+      this.moveResetCounter += 1;
+      this.lockDelayTimer = lockDelayTime;
+    }
+  }
+
   // Queue Methods
   advanceNextQueue() {
     // Advances the queue of upcoming Tetrominoes.
@@ -391,7 +414,7 @@ class Tetris {
   shouldPlaceTetromino() {
     // Returns true if, when a piece is moved down, it should be placed automatically. Returns false otherwise.
     // This does not account for the regular, milliseconds based Piece Lock.
-    return this.droppingHard || this.moveResetCounter >= 15;
+    return this.droppingHard || this.moveResetCounter >= 15 || this.lockDelayTimer <= 0;
   }
 
   canPlaceTetromino(x = this.activePiece.x, y = this.activePiece.y, rotation = this.activePiece.rotation, type = this.activePiece.type) {
@@ -486,6 +509,15 @@ class Tetris {
     }
   }
 
+  handleLockDelay() {
+    if (this.lockDelay === true) {
+      this.lockDelayTimer -= 1;
+    }
+    else {
+      this.lockDelayTimer = lockDelayTime;
+    }
+  }
+
   // Game-end stuff for displays
   findGhostPieceY() {
     if (this.activePiece !== null) {
@@ -532,7 +564,8 @@ class GameDisplay {
     // Base dimensions and zoom
     this.baseWidth = 100;
     this.baseHeight = 100;
-    this.zoom = findZoom(this.baseWidth, this.baseHeight, w, h);
+    this.zoom = findZoom(this.baseWidth, this.baseHeight, this.w, this.h);
+    console.log(this.zoom);
 
     // Sub-displays for matrix, hold, and queue that are scaled to the root display's dimensions.
     this.createMatrixDisplay();
@@ -544,10 +577,10 @@ class GameDisplay {
   createMatrixDisplay() {
     // Create a display for the game's Matrix. Organization function.
     this.matrixDisplay = {
-      relativeX: this.baseWidth / 10,
+      relativeX: this.baseWidth / 3,
       relativeY: this.baseHeight / 10,
-      relativeWidth: this.baseWidth - this.baseWidth / 5,
-      relativeHeight: this.baseHeight / 1.5,
+      relativeWidth: this.baseWidth / 4,
+      relativeHeight: this.baseHeight / 2,
       relativeCellSize: undefined
     };
 
@@ -754,6 +787,7 @@ function setup() {
   keyHeldTimes.set(str(controls.moveRight), 0);
   keyHeldTimes.set(str(controls.softDrop), 0);
 
+  // Defined here because of p5.color object
   temporaryTetrominoColors = [
     color(0, 255, 255), // 0: I
     color(0, 0, 255), // 1: J
@@ -767,17 +801,24 @@ function setup() {
     color(0, 0, 0) // 9: Black
   ];
 
-  theGame = new Tetris(100, 100, 300, 300);
+  let gameZoom = findZoom(300, 300, windowWidth, windowHeight);
+  console.log("gameZoom: ", gameZoom);
+  console.log("windowWidth, windowHeight :", windowWidth, windowHeight);
+  console.log("Tetris height: ", gameZoom * 300);
+  theGame = new Tetris(0, 0, 300, 300);
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
   // Return the highest factor by which the size of the target rectangle can be scaled such that it can still fit within the destination rectangle.
   let zoom;
-  if (destinationW < destinationH) {
-    zoom = destinationW / targetW;
+  let xRatio = destinationW / targetW;
+  let yRatio = destinationH / targetH;
+
+  if (xRatio > yRatio) {
+    zoom = xRatio;
   }
   else {
-    zoom = destinationH / targetH;
+    zoom = yRatio;
   }
   return zoom;
 } 
@@ -862,10 +903,17 @@ function draw() {
   if (theGame.exists) {
     theGame.handleDAS();
     theGame.handleSoftDrop();
+    theGame.handleLockDelay();
     theGame.handleGravity();
   
     theGame.display.displayAll();
   }
+
+  stroke('red');
+  strokeWeight(2);
+  line(0, 300, 300, 300);
+  line(300, 0, 300, 300);
+  noStroke();
 }
 
 // IJLOSTZ
