@@ -26,7 +26,6 @@ let controls;
 
 let keyHeldTimes;
 
-let tasks = [];
 let theGame;
 
 let sprites = [];
@@ -92,6 +91,7 @@ class Tetris {
     
     // Lock Delay & Move Reset
     this.lockDelay = false,
+    this.lockDelayTimer = lockDelayTime;
     this.moveResetCounter = 0,
 
     // Initialization
@@ -565,7 +565,11 @@ class GameDisplay {
     this.baseWidth = 100;
     this.baseHeight = 100;
     this.zoom = findZoom(this.baseWidth, this.baseHeight, this.w, this.h);
-    console.log(this.zoom);
+
+    // Margins, Offsets, etc.
+    this.showUIBackground = false;
+    this.marginX = this.baseWidth / 100;
+    this.offsetY = this.baseWidth / 100;
 
     // Sub-displays for matrix, hold, and queue that are scaled to the root display's dimensions.
     this.createMatrixDisplay();
@@ -577,14 +581,18 @@ class GameDisplay {
   createMatrixDisplay() {
     // Create a display for the game's Matrix. Organization function.
     this.matrixDisplay = {
-      relativeX: this.baseWidth / 3,
-      relativeY: this.baseHeight / 10,
-      relativeWidth: this.baseWidth / 4,
-      relativeHeight: this.baseHeight / 2,
-      relativeCellSize: undefined
+      relativeCellSize: this.baseHeight / 30,
+      relativeX: undefined,
+      relativeY: undefined,
+      relativeWidth: undefined,
+      relativeHeight: undefined,
     };
 
-    this.matrixDisplay.relativeCellSize = this.matrixDisplay.relativeWidth / MATRIX_WIDTH;
+    this.matrixDisplay.relativeHeight = this.matrixDisplay.relativeCellSize * MATRIX_HEIGHT;
+    this.matrixDisplay.relativeWidth = this.matrixDisplay.relativeCellSize * MATRIX_WIDTH;
+
+    this.matrixDisplay.relativeX = (this.baseWidth - this.matrixDisplay.relativeWidth) / 2;
+    this.matrixDisplay.relativeY = (this.baseHeight - this.matrixDisplay.relativeHeight) / 2;
 
     return 0;
   }
@@ -592,16 +600,16 @@ class GameDisplay {
   createQueueDisplay() {
     // Create a display for the game's Queue of upcoming pieces. Organization function.
     this.queueDisplay = {
-      relativeCellSize: 6,
+      relativeCellSize: this.baseWidth / 30,
+      gapBetweenTetrominoes: 1,
+      relativeX: this.matrixDisplay.relativeX + this.matrixDisplay.relativeWidth + this.marginX,
+      relativeY: this.matrixDisplay.relativeY + this.offsetY,
       relativeWidth: undefined,
       relativeHeight: undefined,
-      relativeX: this.matrixDisplay.relativeX + this.matrixDisplay.relativeWidth /* + a margin */,
-      relativeY: this.matrixDisplay.relativeY /* + a margin */,
-      gapBetweenTetrominoes: 1
     };
 
-    this.queueDisplay.relativeHeight = this.queueDisplay.relativeCellSize * (1 + (2 + this.queueDisplay.gapBetweenTetrominoes) * QUEUE_LENGTH);
     this.queueDisplay.relativeWidth = this.queueDisplay.relativeCellSize * 4;
+    this.queueDisplay.relativeHeight = this.queueDisplay.relativeCellSize * (1 + (2 + this.queueDisplay.gapBetweenTetrominoes) * QUEUE_LENGTH);
 
     return 0;
   }
@@ -609,17 +617,18 @@ class GameDisplay {
   createHoldDisplay() {
     // Create the display for the Hold space. Organization function.
     this.holdDisplay = {
-      relativeWidth: this.baseWidth / 6,
-      relativeHeight: this.baseHeight / 12,
+      relativeCellSize: this.baseWidth / 30,
+      relativeWidth: undefined,
+      relativeHeight: undefined,
       relativeX: undefined,
       relativeY: undefined,
-      relativeCellSize: undefined
     };
 
-    this.holdDisplay.relativeCellSize = this.holdDisplay.relativeWidth / 4;
+    this.holdDisplay.relativeWidth = this.holdDisplay.relativeCellSize * 4 /* + a margin */;
+    this.holdDisplay.relativeHeight = this.holdDisplay.relativeCellSize * 2 /* + a margin */;
 
-    this.holdDisplay.relativeX = this.matrixDisplay.relativeX - this.holdDisplay.relativeWidth /* subtract margin*/;
-    this.holdDisplay.relativeY = this.matrixDisplay.relativeY /* + an offset */;
+    this.holdDisplay.relativeX = this.matrixDisplay.relativeX - this.holdDisplay.relativeWidth - this.marginX;
+    this.holdDisplay.relativeY = this.matrixDisplay.relativeY + this.offsetY;
 
     return 0;
   }
@@ -690,10 +699,12 @@ class GameDisplay {
     let cellAbsoluteSize = this.zoom * this.queueDisplay.relativeCellSize;
 
     // Background
-    fill(temporaryTetrominoColors[9]);
-    let backgroundAbsoluteX = this.x + this.zoom * this.queueDisplay.relativeX;
-    let backgroundAbsoluteY = this.y + this.zoom * this.queueDisplay.relativeY;
-    rect(backgroundAbsoluteX, backgroundAbsoluteY, this.zoom * this.queueDisplay.relativeWidth, this.zoom * this.queueDisplay.relativeHeight);
+    if (this.showUIBackground === true) {
+      fill(temporaryTetrominoColors[9]);
+      let backgroundAbsoluteX = this.x + this.zoom * this.queueDisplay.relativeX;
+      let backgroundAbsoluteY = this.y + this.zoom * this.queueDisplay.relativeY;
+      rect(backgroundAbsoluteX, backgroundAbsoluteY, this.zoom * this.queueDisplay.relativeWidth, this.zoom * this.queueDisplay.relativeHeight);
+    }
 
     // Main
     for (let queueIndex = 0; queueIndex < QUEUE_LENGTH; queueIndex++) {
@@ -727,6 +738,14 @@ class GameDisplay {
     // Equivalent to the drawing of the hold space in tetris.py's while running loop.
 
     let cellAbsoluteSize = this.zoom * this.holdDisplay.relativeCellSize;
+
+    if (this.showUIBackground === true) {
+      fill(temporaryTetrominoColors[9]);
+      let backgroundAbsoluteX = this.x + this.zoom * this.holdDisplay.relativeX;
+      let backgroundAbsoluteY = this.y + this.zoom * this.holdDisplay.relativeY;
+      rect(backgroundAbsoluteX, backgroundAbsoluteY, this.zoom * this.holdDisplay.relativeWidth, this.zoom * this.holdDisplay.relativeHeight);
+    }
+
     let currentTetrominoType = this.game.heldPieceType;
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
@@ -739,7 +758,7 @@ class GameDisplay {
             rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
           }
           else {
-            let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + j * this.holdDisplay.relativeCellSize);
+            let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + (j + 1) * this.holdDisplay.relativeCellSize);
             let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + i * this.holdDisplay.relativeCellSize);
             rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
           }
@@ -802,10 +821,7 @@ function setup() {
   ];
 
   let gameZoom = findZoom(300, 300, windowWidth, windowHeight);
-  console.log("gameZoom: ", gameZoom);
-  console.log("windowWidth, windowHeight :", windowWidth, windowHeight);
-  console.log("Tetris height: ", gameZoom * 300);
-  theGame = new Tetris(0, 0, 300, 300);
+  theGame = new Tetris((windowWidth - gameZoom * 300) / 2, (windowHeight - gameZoom * 300) / 2, gameZoom * 300, gameZoom * 300);
 }
 
 function findZoom(targetW, targetH, destinationW, destinationH) {
@@ -814,7 +830,7 @@ function findZoom(targetW, targetH, destinationW, destinationH) {
   let xRatio = destinationW / targetW;
   let yRatio = destinationH / targetH;
 
-  if (xRatio > yRatio) {
+  if (xRatio < yRatio) {
     zoom = xRatio;
   }
   else {
@@ -825,7 +841,8 @@ function findZoom(targetW, targetH, destinationW, destinationH) {
 
 function keyPressed(event) {
   if (event.code === controls.reset) {
-
+    let gameZoom = findZoom(300, 300, windowWidth, windowHeight);
+    theGame = new Tetris((windowWidth - gameZoom * 300) / 2, (windowHeight - gameZoom * 300) / 2, gameZoom * 300, gameZoom * 300);
   }
   if (event.code === controls.rotateRight) {
     theGame.rotateTetromino(1);
@@ -877,6 +894,10 @@ function keyReleased(event) {
   }
 }
 
+function mousePressed() {
+  console.log(mouseX, mouseY);
+}
+
 function increaseKeyHeldTimes() {
   let rightTime = keyHeldTimes.get(str(controls.moveRight));
   let leftTime = keyHeldTimes.get(str(controls.moveLeft));
@@ -896,7 +917,7 @@ function increaseKeyHeldTimes() {
 }
 
 function draw() {
-  background(220);
+  background(120);
   
   increaseKeyHeldTimes();
 
@@ -905,15 +926,13 @@ function draw() {
     theGame.handleSoftDrop();
     theGame.handleLockDelay();
     theGame.handleGravity();
+
+    if (theGame.intersects()) {
+      alert("you lose!");
+    }
   
     theGame.display.displayAll();
   }
-
-  stroke('red');
-  strokeWeight(2);
-  line(0, 300, 300, 300);
-  line(300, 0, 300, 300);
-  noStroke();
 }
 
 // IJLOSTZ

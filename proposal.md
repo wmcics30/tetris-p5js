@@ -4,30 +4,30 @@
 I'm going to build Tetris in p5.js. To do this, I'll utilize Object Oriented Programming, 2D Arrays, JSON, and more. I will be building this to be as accurate to the official Tetris Guideline as my capabilities allow.  
 
 ## Needs To Have List
-- #### Controls
-    - Holding
-    - Horizontal Movement
-    - Soft Drop & Hard Drop
-    - Clockwise, Counterclockwise, and 180 Degree Rotation
+- #### Controls 
+    - Holding ✓
+    - Horizontal Movement ✓
+    - Soft Drop & Hard Drop ✓
+    - Clockwise, Counterclockwise, and 180 Degree Rotation ✓
     - Game Reset hotkey
 
-- #### Game Systems
-    - 7-Bag Randomization
-    - Super Rotation System
-    - Delayed Auto Start
-    - Accurate Gravity Rates
-    - Accurate Scoring for Single, Double, Triple, and Quad Line Clears
-    - Ghost Piece
+- #### Game Systems ✓
+    - 7-Bag Randomization ✓
+    - Super Rotation System ✓
+    - Delayed Auto Start ✓
+    - Accurate Gravity Rates ✓
+    - Accurate Scoring for Single, Double, Triple, and Quad Line Clears ✓
+    - Ghost Piece ✓
 
 - #### Displays
-    - Queue Display
-    - Held Piece Display
+    - Queue Display ✓
+    - Held Piece Display ✓
     - Score Display
     - Level Display
     - Lines Display
 
 - #### Modes
-    - Endless Marathon (Achieve the highest score you can in standard Tetris.)
+    - Endless Marathon (Achieve the highest score you can in standard Tetris.) ✓
     - Sprint (Clear 40 Lines as fast as possible.)
 
 - #### Graphics and Sound
