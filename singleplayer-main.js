@@ -829,8 +829,9 @@ function preload() {
   dasRates = loadJSON('/user-settings/das-arr-rates.json'); // fix this
 
   // Loading sprites
-  // let skinZero = [];
+  let skinZero = [];
 
+  let skinZeroI = loadImage('/sprites/skin0/I.png');
   // let skinZeroI = loadImage('/sprites/skin0/i-mino.png');
   // skinZero.push(skinZeroI);
   /* and so on... */
