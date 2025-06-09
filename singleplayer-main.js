@@ -10,7 +10,7 @@ const MATRIX_WIDTH = 10;
 const MATRIX_HEIGHT = 20;
 const QUEUE_LENGTH = 5;
 
-const SPRINT_REQUIREMENT = 4;
+const SPRINT_REQUIREMENT = 20;
 
 let autoStartDelay = 10;
 let autoRepeatRate = 3; // All of these are frames-per-delay/repetition, higher is slower
@@ -621,7 +621,7 @@ class GameDisplay {
     // Margins, Offsets, etc.
     this.showUIBackground = false;
     this.marginX = this.baseWidth / 100;
-    this.offsetY = this.baseWidth / 100;
+    this.offsetY = 0;
 
     // Sub-displays for matrix, hold, and queue that are scaled to the root display's dimensions.
     this.createMatrixDisplay();
@@ -680,7 +680,7 @@ class GameDisplay {
     this.holdDisplay.relativeHeight = this.holdDisplay.relativeCellSize * 2 /* + a margin */;
 
     this.holdDisplay.relativeX = this.matrixDisplay.relativeX - this.holdDisplay.relativeWidth - this.marginX;
-    this.holdDisplay.relativeY = this.matrixDisplay.relativeY + this.offsetY;
+    this.holdDisplay.relativeY = this.matrixDisplay.relativeY + this.matrixDisplay.relativeCellSize + this.offsetY;
 
     return 0;
   }
@@ -871,7 +871,7 @@ class GameDisplay {
   
             if (currentTetrominoType === 0) {
               let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + (j - 1) * this.holdDisplay.relativeCellSize);
-              let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + (i - 1) * this.holdDisplay.relativeCellSize);
+              let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + (i - 2) * this.holdDisplay.relativeCellSize);
               rect(heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
             }
             else {
@@ -884,7 +884,7 @@ class GameDisplay {
           else if (colourOrSprite === "sprite") {
             if (currentTetrominoType === 0) {
               let heldCellAbsoluteX = this.x + this.zoom * (this.holdDisplay.relativeX + (j - 1) * this.holdDisplay.relativeCellSize);
-              let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + (i - 1) * this.holdDisplay.relativeCellSize);
+              let heldCellAbsoluteY = this.y + this.zoom * (this.holdDisplay.relativeY + (i - 2) * this.holdDisplay.relativeCellSize);
               image(sprites[skin][this.game.heldPieceType], heldCellAbsoluteX, heldCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
             }
             else {
