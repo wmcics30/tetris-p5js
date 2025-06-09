@@ -121,6 +121,10 @@ class Tetris {
   rotateTetromino(rotationDistance = 0) {
     // Rotate the active Tetromino.
 
+    if (!this.active) {
+      return 0;
+    }
+
     if (this.activePiece !== null) {
       let newRotation = this.activePiece.rotation + rotationDistance;
       while (newRotation < 0) {
@@ -204,6 +208,10 @@ class Tetris {
   }
 
   moveTetrominoX(dx = 0) {
+    if (!this.active) {
+      return 0;
+    }
+
     // Moves the active piece to the left or to the right.
     if (this.activePiece !== null && !this.intersects(this.activePiece.x + dx, undefined)) {
       this.activePiece.x += dx;
@@ -215,6 +223,10 @@ class Tetris {
 
   moveTetrominoY(dy = 1) {
     // Moves the active piece either up (which can currently never happen) or down.
+
+    if (!this.active) {
+      return 0;
+    }
 
     // If this.activePiece exists,
     if (this.activePiece !== null) {
@@ -277,6 +289,10 @@ class Tetris {
   }
 
   placeTetromino(x = this.activePiece.x, y = this.activePiece.y, rotation = this.activePiece.rotation, type = this.activePiece.type) {
+    if (!this.active) {
+      return 0;
+    }
+    
     // If the Tetromino is placable,
     if (this.canPlaceTetromino(x, y, rotation, type)) {
 
@@ -304,6 +320,10 @@ class Tetris {
   }
 
   holdTetromino() {
+    if (!this.active) {
+      return 0;
+    }
+
     // Swaps the active Tetromino with the one stored in the "hold" space.
 
     if (this.activePiece !== null && !this.holdUsed) {
@@ -322,6 +342,10 @@ class Tetris {
   }
 
   hardDrop() {
+    if (!this.active) {
+      return 0;
+    }
+
     this.droppingHard = true;
     this.droppingSoft = false;
 
@@ -331,6 +355,10 @@ class Tetris {
   }
 
   clearLines() {
+    if (!this.active) {
+      return 0;
+    }
+
     // Clear rows in the matrix that are entirely full.
 
     let lines = 0;
@@ -381,6 +409,10 @@ class Tetris {
   }
 
   moveReset() {
+    if (!this.active) {
+      return 0;
+    }
+
     if (this.lockDelay === true && this.moveResetCounter < 15) {
       this.moveResetCounter += 1;
       this.lockDelayTimer = lockDelayTime;
@@ -389,6 +421,7 @@ class Tetris {
 
   // Queue Methods
   advanceNextQueue() {
+
     // Advances the queue of upcoming Tetrominoes.
 
     if (this.activePiece === null) {
@@ -402,6 +435,7 @@ class Tetris {
   }
 
   refillNextQueue() {
+
     // Refills the queue of upcoming Tetrominoes when depleted.
 
     // If the queue is shorter than the displayed queue length, refill it with shuffled values 0-6.
@@ -445,6 +479,7 @@ class Tetris {
 
   // Game Loop Stuff ????? Needs to be reorganized at some point
   handleGravity() {
+    
     try {
       if (frameCount % levelGravities[this.level][0] === 0) {
         this.moveTetrominoY(levelGravities[this.level][1]);
@@ -501,6 +536,7 @@ class Tetris {
   }
 
   handleSoftDrop() {
+    
     let softTime = keyHeldTimes.get(str(controls.softDrop));
     let softMatchesDropSpeed = softTime % softDropSpeed === 0;
 
@@ -646,13 +682,16 @@ class GameDisplay {
         let cellType = this.game.matrix[i][j];
 
         // Temporary variables for the cell's absolute position
-        // Will need reworking for vanihsh zone
+        // Will need reworking for vanish zone
         let cellAbsoluteX = this.x + this.zoom * (this.matrixDisplay.relativeX + j * this.matrixDisplay.relativeCellSize);
         let cellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + i * this.matrixDisplay.relativeCellSize);
 
         // image(sprites[skin][cellType], cellAbsoluteX, cellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         if (cellType === null) {
           fill(temporaryTetrominoColors[9]);
+        }
+        else if (!this.game.active) {
+          fill(temporaryTetrominoColors[8]);
         }
         else {
           fill(temporaryTetrominoColors[cellType]);
@@ -686,7 +725,12 @@ class GameDisplay {
           let activeCellAbsoluteY = this.y + this.zoom * (this.matrixDisplay.relativeY + (this.game.activePiece.y + i) * this.matrixDisplay.relativeCellSize);
 
           // image(sprites[skin][this.game.activePiece.type], activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
-          fill(temporaryTetrominoColors[this.game.activePiece.type]);
+          if (this.game.active) {
+            fill(temporaryTetrominoColors[this.game.activePiece.type]);
+          }
+          else {
+            fill(temporaryTetrominoColors[8]);
+          }
           rect(activeCellAbsoluteX, activeCellAbsoluteY, cellAbsoluteSize, cellAbsoluteSize);
         }
       }
@@ -928,7 +972,7 @@ function draw() {
     theGame.handleGravity();
 
     if (theGame.intersects()) {
-      alert("you lose!");
+      theGame.active = false;
     }
   
     theGame.display.displayAll();
