@@ -39,25 +39,29 @@ I'm going to build Tetris in p5.js. To do this, I'll utilize Object Oriented Pro
 
 ## Nice To Have List
 - #### Game Systems
-    - Accurate Spin Detection, Scoring, and Attack (in VS.)
-    - Rewarding of Back to Back chains
-    - Vanish Zone
+    - Accurate Spin Detection, Scoring, and Attack (in VS.) X
+    - Rewarding of Back to Back chains X
+    - Vanish Zone X
 
 - #### Modes
-    - 1v1 VS Mode (Local)
-    - 1v1 VS Mode (Online)
+    - 1v1 VS Mode (Local) X
+    - 1v1 VS Mode (Online) X
 
 - #### Graphics and Sound
-    - Various Sound Effects
-    - Toggleable BGM
-    - Toggleable Line Clear animation
+    - Various Sound Effects X
+    - Toggleable BGM X
+    - Toggleable Line Clear animation X
 
 - #### Options and Customization
-    - Customizable DAS and ARR Rates (Sprint) ? - Possible 
-    - Starting Level selection (Marathon)
-    - Tetromino Sprite Reskins
-    - Control Remapping ? - Possible through simple JSON editing, but not within the sketch itself.
-    - ...And More
+    - Customizable DAS and ARR Rates (Sprint) ?
+        - Possible through changing certain variables, but not within the sketch itself.
+    - Starting Level selection (Marathon) X
+        - Possible through changing a variable in the Tetris constructor or the Setup() function, but not in the sketch itself. Not counting this one. 
+    - Tetromino Sprite Reskins ?
+        - Does flipping between solid colours and sprites count? 
+    - Control Remapping ?
+        - Possible through simple JSON editing, but not within the sketch itself.
+    - ...And More X
 
 - #### Other
-    - Local Leaderboards for Marathon and Sprint modes
+    - Local Leaderboards for Marathon and Sprint modes X
