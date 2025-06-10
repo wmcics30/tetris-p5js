@@ -7,8 +7,9 @@
     "rotateRight": "KeyL",
     "rotate180": "KeyK",
     "hold": "Slash",
-    "startMarathon": "KeyC",
-    "startSprint": "KeyV",
+    "startMarathon": "KeyV",
+    "startSprint": "KeyC",
+    "debugColourOrSpriteSwap": "Digit1",
     "pause": "Escape",
     "_comment": "use the event.code property of a KeyboardEvent object."
 }

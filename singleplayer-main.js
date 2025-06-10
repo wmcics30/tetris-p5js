@@ -1090,7 +1090,6 @@ function keyPressed(event) {
   }
 
   if (event.code === controls.moveRight) {
-    //
     theGame.moveTetrominoX(1);
     keyHeldTimes.set(str(controls.moveRight), 1);
   }
@@ -1115,6 +1114,18 @@ function keyPressed(event) {
   if (event.code === controls.pause) {
 
   }
+
+  // swap between colour and sprite
+  if (event.code === controls.debugColourOrSpriteSwap) {
+    if (colourOrSprite === "colour") {
+      colourOrSprite = "sprite";
+    }
+    else if (colourOrSprite === "sprite") {
+      colourOrSprite = "colour";
+    }
+  }
+
+  return false;
 }
 
 function keyReleased(event) {
