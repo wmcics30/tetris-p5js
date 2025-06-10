@@ -391,16 +391,16 @@ class Tetris {
     // Basic Per-Line Scoring
     switch (lines) {
     case 1:
-      this.score += 100 * this.level;
+      this.score += 100 * (this.level + 1);
       break;
     case 2:
-      this.score += 300 * this.level;
+      this.score += 300 * (this.level + 1);
       break;
     case 3:
-      this.score += 500 * this.level;
+      this.score += 500 * (this.level + 1);
       break;
     case 4:
-      this.score += 800 * this.level;
+      this.score += 800 * (this.level + 1);
       break;
     default:
       // Nothing
@@ -411,6 +411,11 @@ class Tetris {
     this.linesCleared += lines;
     if (Math.floor(this.linesCleared / 10) > this.level) {
       this.level = Math.floor(this.linesCleared / 10);
+    }
+
+    // Resizing Score Display's text if necessary
+    if (this.display.resizeNeeded) {
+      this.display.resizeText();
     }
 
     if (this.gameMode === "sprint" && this.linesCleared >= SPRINT_REQUIREMENT) {
@@ -627,6 +632,7 @@ class GameDisplay {
     this.createMatrixDisplay();
     this.createQueueDisplay();
     this.createHoldDisplay();
+    this.createStatsDisplay();
   }
 
   // Sub-Display creators. Would be static, but the Hold and Queue displays rely on the Matrix display.
@@ -683,6 +689,23 @@ class GameDisplay {
     this.holdDisplay.relativeY = this.matrixDisplay.relativeY + this.matrixDisplay.relativeCellSize + this.offsetY;
 
     return 0;
+  }
+
+  createStatsDisplay() {
+    this.statsDisplay = {
+      relativeWidth: this.matrixDisplay.relativeWidth,
+      relativeHeight: this.baseHeight / 10,
+      relativeX: this.matrixDisplay.relativeX,
+      relativeY: this.matrixDisplay.relativeY + this.matrixDisplay.relativeHeight /* + a margin */,
+      relativeTextSize: undefined,
+      relativeTextBoxWidth: undefined,
+    };
+
+    this.statsDisplay.relativeTextBoxWidth = this.statsDisplay.relativeWidth / 3;
+    this.statsDisplay.relativeTextSize = this.baseWidth / 40;
+    
+    textSize(this.statsDisplay.relativeTextSize * this.zoom);
+    textAlign(LEFT, TOP);
   }
 
   // Equivalent to draw functions.
@@ -898,12 +921,54 @@ class GameDisplay {
     }
   }
 
+  displayStats() {
+    let statLines = "Lines: " + String(this.game.linesCleared);
+    let statScore = "Score: " + String(this.game.score);
+    let statLevel = "Level: " + String(this.game.level);
+
+    fill('red');
+    text(statLines, this.x + this.zoom * (this.statsDisplay.relativeX + 0 * (this.statsDisplay.relativeWidth / 3)), this.y + this.zoom * this.statsDisplay.relativeY);
+    text(statScore, this.x + this.zoom * (this.statsDisplay.relativeX + 1 * (this.statsDisplay.relativeWidth / 3)), this.y + this.zoom * this.statsDisplay.relativeY);
+    text(statLevel, this.x + this.zoom * (this.statsDisplay.relativeX + 2 * (this.statsDisplay.relativeWidth / 3)), this.y + this.zoom * this.statsDisplay.relativeY);
+  }
+
   displayAll() {
     // Runs all other display functions.
     this.displayMatrix();
     this.displayQueue();
     this.displayHold();
+    this.displayStats();
   }
+
+  // Resize Text for the statsDisplay
+  resizeText() {
+    let textDecreaseMultiplier = 0.9;
+
+    textSize(this.statsDisplay.relativeTextSize * this.zoom);
+    while (this.resizeNeeded()) {
+      this.statsDisplay.relativeTextSize *= textDecreaseMultiplier;
+      textSize(this.statsDisplay.relativeTextSize * this.zoom);
+    }
+  }
+
+  // Conditionals
+  resizeNeeded() {
+    let statLines = "Lines: " + String(this.game.linesCleared);
+    let statScore = "Score: " + String(this.game.score);
+    let statLevel = "Level: " + String(this.game.level);
+    
+    let longestStatString = findWidestString(statLines, statScore, statLevel);
+
+    if (this.textExceedsBoundaries(longestStatString)) {
+      return true;
+    }
+    return false;
+  }
+
+  textExceedsBoundaries(text) {
+    return textWidth(text) > this.statsDisplay.relativeTextBoxWidth * this.zoom;
+  }
+  
 }
 
 function preload() {
@@ -991,7 +1056,19 @@ function findZoom(targetW, targetH, destinationW, destinationH) {
     zoom = yRatio;
   }
   return zoom;
-} 
+}
+
+function findWidestString(...strings) {
+  // Assumes text is formatted correctly already. May cause issues if more text is to be displayed with different sizes/fonts/etc
+  let widestString = "";
+  for (let string of strings) {
+    if (textWidth(string) >= textWidth(widestString)) {
+      widestString = string;
+    }
+  }
+
+  return widestString;
+}
 
 function keyPressed(event) {
   if (event.code === controls.startMarathon) {

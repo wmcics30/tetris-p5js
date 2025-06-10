@@ -19,12 +19,12 @@ I'm going to build Tetris in p5.js. To do this, I'll utilize Object Oriented Pro
     - Accurate Scoring for Single, Double, Triple, and Quad Line Clears ✓
     - Ghost Piece ✓
 
-- #### Displays
+- #### Displays ✓
     - Queue Display ✓
     - Held Piece Display ✓
-    - Score Display
-    - Level Display
-    - Lines Display
+    - Score Display ✓
+    - Level Display ✓
+    - Lines Display ✓
 
 - #### Modes ✓
     - Endless Marathon (Achieve the highest score you can in standard Tetris.) ✓
@@ -35,7 +35,7 @@ I'm going to build Tetris in p5.js. To do this, I'll utilize Object Oriented Pro
     - Cleaner UI compared to my CS20 Final Project ✓?
 
 - #### Other
-    - Title Screen
+    - Title Screen X
 
 ## Nice To Have List
 - #### Game Systems
@@ -53,10 +53,10 @@ I'm going to build Tetris in p5.js. To do this, I'll utilize Object Oriented Pro
     - Toggleable Line Clear animation
 
 - #### Options and Customization
-    - Customizable DAS and ARR Rates (Sprint)
+    - Customizable DAS and ARR Rates (Sprint) ? - Possible 
     - Starting Level selection (Marathon)
     - Tetromino Sprite Reskins
-    - Control Remapping
+    - Control Remapping ? - Possible through simple JSON editing, but not within the sketch itself.
     - ...And More
 
 - #### Other
