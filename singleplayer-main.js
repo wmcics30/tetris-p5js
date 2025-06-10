@@ -699,6 +699,7 @@ class GameDisplay {
       relativeY: this.matrixDisplay.relativeY + this.matrixDisplay.relativeHeight /* + a margin */,
       relativeTextSize: undefined,
       relativeTextBoxWidth: undefined,
+      relativeTextBoxMargin: this.baseWidth / 100,
     };
 
     this.statsDisplay.relativeTextBoxWidth = this.statsDisplay.relativeWidth / 3;
@@ -926,7 +927,7 @@ class GameDisplay {
     let statScore = "Score: " + String(this.game.score);
     let statLevel = "Level: " + String(this.game.level);
 
-    fill('red');
+    fill(200);
     text(statLines, this.x + this.zoom * (this.statsDisplay.relativeX + 0 * (this.statsDisplay.relativeWidth / 3)), this.y + this.zoom * this.statsDisplay.relativeY);
     text(statScore, this.x + this.zoom * (this.statsDisplay.relativeX + 1 * (this.statsDisplay.relativeWidth / 3)), this.y + this.zoom * this.statsDisplay.relativeY);
     text(statLevel, this.x + this.zoom * (this.statsDisplay.relativeX + 2 * (this.statsDisplay.relativeWidth / 3)), this.y + this.zoom * this.statsDisplay.relativeY);
@@ -966,7 +967,7 @@ class GameDisplay {
   }
 
   textExceedsBoundaries(text) {
-    return textWidth(text) > this.statsDisplay.relativeTextBoxWidth * this.zoom;
+    return textWidth(text) > (this.statsDisplay.relativeTextBoxWidth - this.statsDisplay.relativeTextBoxMargin) * this.zoom;
   }
   
 }
